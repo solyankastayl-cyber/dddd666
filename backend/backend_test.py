@@ -1,481 +1,301 @@
 #!/usr/bin/env python3
-"""
-BLOCK 79 — Proposal Persistence + Audit Trail Testing
-Tests all proposal lifecycle endpoints and audit trail functionality.
-"""
 
 import requests
 import sys
 import json
-from datetime import datetime
-from typing import Dict, Any, Optional
+from datetime import datetime, date
+from typing import Dict, List, Any
 
-class Block79ProposalTester:
-    def __init__(self, base_url="https://consensus-timeline.preview.emergentagent.com"):
+class FractalIntelTimelineTest:
+    """BLOCK 82 — Intel Timeline API Test Suite"""
+    
+    def __init__(self, base_url="https://fractal-dev-2.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
-        self.results = []
-        self.symbol = "BTC"
-        self.test_proposal_id = None
-        self.test_application_id = None
-
-    def log_test(self, name: str, success: bool, response_data: Any = None, error: str = None):
-        """Log test result"""
-        self.tests_run += 1
-        if success:
-            self.tests_passed += 1
-            print(f"✅ {name}")
-        else:
-            print(f"❌ {name} - {error}")
+        self.test_results = []
         
-        self.results.append({
-            "test": name,
-            "success": success,
-            "response": response_data,
-            "error": error
-        })
-
-    def make_request(self, method: str, endpoint: str, params: Dict = None, data: Dict = None) -> tuple[bool, Any, str]:
-        """Make HTTP request and return (success, response_data, error_message)"""
+    def run_test(self, name: str, method: str, endpoint: str, expected_status: int, 
+                 data=None, query_params=None) -> tuple[bool, dict]:
+        """Run a single API test"""
         url = f"{self.base_url}/{endpoint}"
+        headers = {'Content-Type': 'application/json'}
+        
+        if query_params:
+            params = '&'.join([f"{k}={v}" for k, v in query_params.items()])
+            url += f"?{params}"
+        
+        self.tests_run += 1
+        print(f"\n🔍 Testing {name}...")
+        print(f"   URL: {method} {url}")
         
         try:
             if method == 'GET':
-                response = requests.get(url, params=params, timeout=30)
+                response = requests.get(url, headers=headers, timeout=10)
             elif method == 'POST':
-                if data is not None:
-                    headers = {'Content-Type': 'application/json'}
-                    response = requests.post(url, params=params, json=data, headers=headers, timeout=30)
-                else:
-                    response = requests.post(url, params=params, timeout=30)
+                response = requests.post(url, json=data, headers=headers, timeout=10)
             else:
-                return False, None, f"Unsupported method: {method}"
-
-            if response.status_code == 200:
+                response = requests.request(method, url, json=data, headers=headers, timeout=10)
+            
+            success = response.status_code == expected_status
+            
+            if success:
+                self.tests_passed += 1
+                print(f"✅ PASSED - Status: {response.status_code}")
                 try:
-                    return True, response.json(), None
-                except json.JSONDecodeError:
-                    return True, response.text, None
+                    response_data = response.json()
+                    if isinstance(response_data, dict) and 'ok' in response_data:
+                        print(f"   Response: {response_data.get('ok')} - {response_data.get('message', '')}")
+                except:
+                    pass
             else:
-                return False, None, f"HTTP {response.status_code}: {response.text[:200]}"
-
-        except requests.exceptions.Timeout:
-            return False, None, "Request timeout (30s)"
-        except requests.exceptions.ConnectionError:
-            return False, None, "Connection error"
+                print(f"❌ FAILED - Expected {expected_status}, got {response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"   Error: {error_data}")
+                except:
+                    print(f"   Raw response: {response.text[:200]}...")
+            
+            self.test_results.append({
+                'name': name,
+                'success': success,
+                'status_code': response.status_code,
+                'expected_status': expected_status,
+                'url': url
+            })
+            
+            return success, response.json() if response.text else {}
+            
         except Exception as e:
-            return False, None, f"Request error: {str(e)}"
-
-    def test_create_proposal(self):
-        """Test POST /api/fractal/v2.1/admin/proposal/propose"""
-        test_data = {
-            "symbol": self.symbol,
-            "preset": "balanced",
-            "role": "ACTIVE",
-            "focus": "30d",
-            "source": "LIVE",
-            "window": 90
+            print(f"❌ FAILED - Exception: {str(e)}")
+            self.test_results.append({
+                'name': name,
+                'success': False,
+                'error': str(e),
+                'url': url
+            })
+            return False, {}
+    
+    def test_intel_timeline_endpoints(self):
+        """Test all BLOCK 82 Intel Timeline endpoints"""
+        
+        print("=" * 60)
+        print("🧪 BLOCK 82 — Intel Timeline API Tests")
+        print("=" * 60)
+        
+        # Test 1: GET /api/fractal/v2.1/admin/intel/counts
+        print("\n📊 Testing counts endpoint...")
+        success, counts_data = self.run_test(
+            "Intel Timeline Counts",
+            "GET",
+            "api/fractal/v2.1/admin/intel/counts",
+            200,
+            query_params={"symbol": "BTC"}
+        )
+        
+        if success and counts_data:
+            counts = counts_data.get('counts', {})
+            print(f"   📈 LIVE: {counts.get('LIVE', 0)}")
+            print(f"   📈 V2020: {counts.get('V2020', 0)}")  
+            print(f"   📈 V2014: {counts.get('V2014', 0)}")
+            print(f"   📈 Total: {counts_data.get('total', 0)}")
+        
+        # Test 2: GET /api/fractal/v2.1/admin/intel/timeline (LIVE source, 30d window)
+        print("\n📈 Testing timeline endpoint (LIVE, 30d)...")
+        success, timeline_data = self.run_test(
+            "Intel Timeline (LIVE, 30d)",
+            "GET",
+            "api/fractal/v2.1/admin/intel/timeline",
+            200,
+            query_params={"symbol": "BTC", "source": "LIVE", "window": "30"}
+        )
+        
+        if success and timeline_data:
+            series = timeline_data.get('series', [])
+            stats = timeline_data.get('stats', {})
+            meta = timeline_data.get('meta', {})
+            print(f"   📊 Series length: {len(series)}")
+            print(f"   📊 Window: {meta.get('window')}d ({meta.get('from')} to {meta.get('to')})")
+            if stats:
+                print(f"   📊 Lock days: {stats.get('lockDays', 0)}")
+                print(f"   📊 Structure dominance: {stats.get('structureDominancePct', 0)}%")
+                print(f"   📊 Avg phase score: {stats.get('avgPhaseScore', 0)}")
+                print(f"   📊 7d trend: {stats.get('trend7d', 'FLAT')}")
+        
+        # Test 3: GET /api/fractal/v2.1/admin/intel/timeline (V2020 source, 90d window) 
+        print("\n📈 Testing timeline endpoint (V2020, 90d)...")
+        success, timeline_v2020 = self.run_test(
+            "Intel Timeline (V2020, 90d)",
+            "GET",
+            "api/fractal/v2.1/admin/intel/timeline",
+            200,
+            query_params={"symbol": "BTC", "source": "V2020", "window": "90"}
+        )
+        
+        if success and timeline_v2020:
+            series = timeline_v2020.get('series', [])
+            stats = timeline_v2020.get('stats', {})
+            print(f"   📊 V2020 series length: {len(series)}")
+            if stats:
+                print(f"   📊 V2020 lock days: {stats.get('lockDays', 0)}")
+                print(f"   📊 V2020 structure dominance: {stats.get('structureDominancePct', 0)}%")
+        
+        # Test 4: GET /api/fractal/v2.1/admin/intel/timeline (V2014 source, 180d window)
+        print("\n📈 Testing timeline endpoint (V2014, 180d)...")
+        success, timeline_v2014 = self.run_test(
+            "Intel Timeline (V2014, 180d)",
+            "GET",
+            "api/fractal/v2.1/admin/intel/timeline",
+            200,
+            query_params={"symbol": "BTC", "source": "V2014", "window": "180"}
+        )
+        
+        if success and timeline_v2014:
+            series = timeline_v2014.get('series', [])
+            stats = timeline_v2014.get('stats', {})
+            print(f"   📊 V2014 series length: {len(series)}")
+            if stats:
+                print(f"   📊 V2014 lock days: {stats.get('lockDays', 0)}")
+                print(f"   📊 V2014 tactical dominance: {stats.get('tacticalDominancePct', 0)}%")
+        
+        # Test 5: GET /api/fractal/v2.1/admin/intel/latest (LIVE source)
+        print("\n📈 Testing latest endpoint (LIVE)...")
+        success, latest_live = self.run_test(
+            "Intel Latest (LIVE)",
+            "GET",
+            "api/fractal/v2.1/admin/intel/latest",
+            200,
+            query_params={"symbol": "BTC", "source": "LIVE"}
+        )
+        
+        if success and latest_live:
+            latest = latest_live.get('latest')
+            if latest:
+                print(f"   📊 Latest LIVE date: {latest.get('date')}")
+                print(f"   📊 Phase: {latest.get('phaseType')} ({latest.get('phaseGrade')})")
+                print(f"   📊 Dominance: {latest.get('dominanceTier')}")
+                print(f"   📊 Structural lock: {latest.get('structuralLock')}")
+            else:
+                print(f"   📊 No LIVE data available")
+        
+        # Test 6: GET /api/fractal/v2.1/admin/intel/latest (V2020 source)
+        print("\n📈 Testing latest endpoint (V2020)...")
+        success, latest_v2020 = self.run_test(
+            "Intel Latest (V2020)",
+            "GET",
+            "api/fractal/v2.1/admin/intel/latest",
+            200,
+            query_params={"symbol": "BTC", "source": "V2020"}
+        )
+        
+        if success and latest_v2020:
+            latest = latest_v2020.get('latest')
+            if latest:
+                print(f"   📊 Latest V2020 date: {latest.get('date')}")
+                print(f"   📊 Phase: {latest.get('phaseType')} ({latest.get('phaseGrade')})")
+                print(f"   📊 Phase score: {latest.get('phaseScore')}")
+        
+        # Test 7: POST /api/fractal/v2.1/admin/intel/backfill (Test backfill functionality)
+        # This should work if the cohort data doesn't exist yet or is small
+        print("\n📈 Testing backfill endpoint (small range)...")
+        backfill_payload = {
+            "cohort": "V2020",
+            "from": "2020-01-01",
+            "to": "2020-01-05"  # Small range for testing
         }
-        
-        success, data, error = self.make_request(
-            'POST', 
-            'api/fractal/v2.1/admin/proposal/propose',
-            data=test_data
+        success, backfill_result = self.run_test(
+            "Intel Backfill (small range)",
+            "POST", 
+            "api/fractal/v2.1/admin/intel/backfill",
+            200,
+            data=backfill_payload
         )
         
-        if success and data:
-            if data.get('ok') and 'proposal' in data:
-                proposal = data['proposal']
-                expected_fields = ['proposalId', 'status', 'verdict', 'source', 'scope', 'deltas', 'simulation', 'guardrails']
-                has_fields = all(field in proposal for field in expected_fields)
-                
-                if has_fields:
-                    if proposal.get('status') == 'PROPOSED' and proposal.get('source') == 'LIVE':
-                        self.test_proposal_id = proposal['proposalId']
-                        self.log_test("Create Proposal", True, data)
-                        return proposal
-                    else:
-                        self.log_test("Create Proposal", False, data, f"Invalid status or source: {proposal.get('status')}, {proposal.get('source')}")
-                else:
-                    self.log_test("Create Proposal", False, data, "Missing expected proposal fields")
-            else:
-                self.log_test("Create Proposal", False, data, f"Missing ok=true or proposal field: {data}")
-        else:
-            self.log_test("Create Proposal", False, data, error)
+        if success and backfill_result:
+            print(f"   📊 Backfill cohort: {backfill_result.get('cohort')}")
+            print(f"   📊 Written: {backfill_result.get('written', 0)}")
+            print(f"   📊 Skipped: {backfill_result.get('skipped', 0)}")
         
-        return None
-
-    def test_list_proposals(self):
-        """Test GET /api/fractal/v2.1/admin/proposal/list"""
-        success, data, error = self.make_request(
-            'GET', 
-            'api/fractal/v2.1/admin/proposal/list',
-            params={'symbol': self.symbol, 'limit': '10'}
-        )
-        
-        if success and data:
-            if data.get('ok') and 'proposals' in data and 'total' in data:
-                proposals = data['proposals']
-                total = data['total']
-                
-                if len(proposals) <= total:
-                    # Check if our test proposal exists
-                    has_test_proposal = any(p.get('proposalId') == self.test_proposal_id for p in proposals) if self.test_proposal_id else True
-                    
-                    if has_test_proposal:
-                        self.log_test("List Proposals", True, data)
-                        return proposals
-                    else:
-                        self.log_test("List Proposals", False, data, f"Test proposal {self.test_proposal_id} not found in list")
-                else:
-                    self.log_test("List Proposals", False, data, f"Proposals length {len(proposals)} exceeds total {total}")
-            else:
-                self.log_test("List Proposals", False, data, "Missing ok=true, proposals, or total fields")
-        else:
-            self.log_test("List Proposals", False, data, error)
-        
-        return None
-
-    def test_get_latest_proposal(self):
-        """Test GET /api/fractal/v2.1/admin/proposal/latest"""
-        success, data, error = self.make_request(
-            'GET', 
-            'api/fractal/v2.1/admin/proposal/latest',
-            params={'source': 'LIVE'}
-        )
-        
-        if success and data:
-            if data.get('ok'):
-                proposal = data.get('proposal')
-                if proposal:
-                    expected_fields = ['proposalId', 'status', 'source', 'createdAt']
-                    has_fields = all(field in proposal for field in expected_fields)
-                    
-                    if has_fields:
-                        self.log_test("Get Latest Proposal", True, data)
-                        return proposal
-                    else:
-                        self.log_test("Get Latest Proposal", False, data, "Missing expected proposal fields")
-                else:
-                    self.log_test("Get Latest Proposal", True, data, "No latest proposal (expected if none exist)")
-                    return None
-            else:
-                self.log_test("Get Latest Proposal", False, data, "Missing ok=true")
-        else:
-            self.log_test("Get Latest Proposal", False, data, error)
-        
-        return None
-
-    def test_get_proposal_by_id(self):
-        """Test GET /api/fractal/v2.1/admin/proposal/:proposalId"""
-        if not self.test_proposal_id:
-            # Try to get an existing proposal ID
-            success, data, error = self.make_request(
-                'GET', 
-                'api/fractal/v2.1/admin/proposal/list',
-                params={'limit': '1'}
+        # Test 8: Test different window sizes
+        print("\n📈 Testing different window sizes...")
+        for window in [30, 90, 180, 365]:
+            success, _ = self.run_test(
+                f"Intel Timeline (LIVE, {window}d)",
+                "GET",
+                "api/fractal/v2.1/admin/intel/timeline", 
+                200,
+                query_params={"symbol": "BTC", "source": "LIVE", "window": str(window)}
             )
-            
-            if success and data and data.get('proposals'):
-                self.test_proposal_id = data['proposals'][0].get('proposalId')
-            
-            if not self.test_proposal_id:
-                # Use the known existing proposal ID
-                self.test_proposal_id = "prop_cb50d4f8"
+    
+    def test_error_cases(self):
+        """Test error handling"""
+        print("\n🚨 Testing error cases...")
         
-        success, data, error = self.make_request(
-            'GET', 
-            f'api/fractal/v2.1/admin/proposal/{self.test_proposal_id}'
+        # Invalid source
+        self.run_test(
+            "Invalid source",
+            "GET",
+            "api/fractal/v2.1/admin/intel/timeline",
+            200,  # Should still return 200 but empty data
+            query_params={"symbol": "BTC", "source": "INVALID", "window": "30"}
         )
         
-        if success and data:
-            if data.get('ok') and 'proposal' in data:
-                proposal = data['proposal']
-                if proposal.get('proposalId') == self.test_proposal_id:
-                    self.log_test("Get Proposal by ID", True, data)
-                    return proposal
-                else:
-                    self.log_test("Get Proposal by ID", False, data, f"ID mismatch: expected {self.test_proposal_id}, got {proposal.get('proposalId')}")
-            else:
-                self.log_test("Get Proposal by ID", False, data, "Missing ok=true or proposal field")
-        else:
-            self.log_test("Get Proposal by ID", False, data, error)
-        
-        return None
-
-    def test_reject_proposal(self):
-        """Test POST /api/fractal/v2.1/admin/proposal/reject/:proposalId"""
-        # Create a new proposal specifically for rejection
-        test_data = {
-            "symbol": self.symbol,
-            "preset": "conservative",
-            "role": "SHADOW",
-            "focus": "7d",
-            "source": "V2020",
-            "window": 30
-        }
-        
-        success, data, error = self.make_request(
-            'POST', 
-            'api/fractal/v2.1/admin/proposal/propose',
-            data=test_data
+        # Invalid symbol
+        self.run_test(
+            "Invalid symbol",
+            "GET", 
+            "api/fractal/v2.1/admin/intel/timeline",
+            200,  # Should still return 200 but empty data
+            query_params={"symbol": "INVALID", "source": "LIVE", "window": "30"}
         )
         
-        reject_proposal_id = None
-        if success and data and data.get('ok'):
-            reject_proposal_id = data['proposal']['proposalId']
-        
-        if not reject_proposal_id:
-            self.log_test("Reject Proposal", False, None, "Could not create proposal for rejection test")
-            return None
-        
-        # Now reject it
-        reject_data = {
-            "reason": "Test rejection for automation testing",
-            "actor": "ADMIN"
-        }
-        
-        success, data, error = self.make_request(
-            'POST', 
-            f'api/fractal/v2.1/admin/proposal/reject/{reject_proposal_id}',
-            data=reject_data
+        # Invalid backfill data
+        self.run_test(
+            "Invalid backfill (missing fields)",
+            "POST",
+            "api/fractal/v2.1/admin/intel/backfill",
+            200,  # API should return error message with ok: false
+            data={"cohort": "V2020"}  # Missing from/to
         )
+    
+    def print_summary(self):
+        """Print test results summary"""
+        print("\n" + "=" * 60)
+        print("📊 BLOCK 82 — Intel Timeline Test Summary")
+        print("=" * 60)
+        print(f"Total tests: {self.tests_run}")
+        print(f"Passed: {self.tests_passed}")
+        print(f"Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success rate: {(self.tests_passed/self.tests_run*100):.1f}%" if self.tests_run > 0 else "0%")
         
-        if success and data:
-            if data.get('ok') and 'proposal' in data:
-                proposal = data['proposal']
-                if proposal.get('status') == 'REJECTED' and proposal.get('rejectedReason'):
-                    self.log_test("Reject Proposal", True, data)
-                    return proposal
-                else:
-                    self.log_test("Reject Proposal", False, data, f"Status not REJECTED or missing reason: {proposal.get('status')}")
-            else:
-                self.log_test("Reject Proposal", False, data, "Missing ok=true or proposal field")
-        else:
-            self.log_test("Reject Proposal", False, data, error)
+        # Print failed tests
+        failed_tests = [r for r in self.test_results if not r['success']]
+        if failed_tests:
+            print(f"\n❌ Failed tests ({len(failed_tests)}):")
+            for test in failed_tests:
+                print(f"   • {test['name']}: {test.get('error', f'HTTP {test.get('status_code')}')}")
         
-        return None
-
-    def test_apply_proposal_governance_lock(self):
-        """Test POST /api/fractal/v2.1/admin/proposal/apply/:proposalId - should fail due to governance lock"""
-        if not self.test_proposal_id:
-            self.log_test("Apply Proposal (Governance Lock)", False, None, "No test proposal ID available")
-            return None
-        
-        apply_data = {
-            "reason": "Test application - should be blocked by governance lock",
-            "actor": "ADMIN"
-        }
-        
-        success, data, error = self.make_request(
-            'POST', 
-            f'api/fractal/v2.1/admin/proposal/apply/{self.test_proposal_id}',
-            data=apply_data
-        )
-        
-        # This should FAIL due to governance lock (LIVE samples = 0, need >= 30)
-        if success and data:
-            if data.get('ok'):
-                # This should NOT happen
-                self.log_test("Apply Proposal (Governance Lock)", False, data, "Apply succeeded when it should be blocked by governance lock")
-            else:
-                # This is expected - blocked by governance lock
-                error_msg = data.get('error', '').lower()
-                if 'governance lock' in error_msg or 'live samples' in error_msg or 'blocked' in error_msg:
-                    self.log_test("Apply Proposal (Governance Lock)", True, data, "Correctly blocked by governance lock")
-                    return data
-                else:
-                    self.log_test("Apply Proposal (Governance Lock)", False, data, f"Failed but not due to governance lock: {data.get('error')}")
-        else:
-            # Check if error message indicates governance lock
-            if error and ('governance' in error.lower() or 'lock' in error.lower() or 'samples' in error.lower()):
-                self.log_test("Apply Proposal (Governance Lock)", True, None, f"Correctly blocked by governance lock: {error}")
-            else:
-                self.log_test("Apply Proposal (Governance Lock)", False, data, error)
-        
-        return None
-
-    def test_get_current_policy(self):
-        """Test GET /api/fractal/v2.1/admin/policy/current"""
-        success, data, error = self.make_request(
-            'GET', 
-            'api/fractal/v2.1/admin/policy/current'
-        )
-        
-        if success and data:
-            if data.get('ok') and 'policy' in data and 'hash' in data:
-                policy = data['policy']
-                hash_value = data['hash']
-                version = data.get('version')
-                
-                # Check policy structure
-                policy_fields = ['tierWeights', 'divergencePenalties', 'phaseGradeMultipliers']
-                has_policy_fields = any(field in policy for field in policy_fields)
-                
-                if has_policy_fields and hash_value:
-                    self.log_test("Get Current Policy", True, data)
-                    return data
-                else:
-                    self.log_test("Get Current Policy", False, data, "Missing expected policy fields or hash")
-            else:
-                self.log_test("Get Current Policy", False, data, "Missing ok=true, policy, or hash fields")
-        else:
-            self.log_test("Get Current Policy", False, data, error)
-        
-        return None
-
-    def test_get_audit_trail(self):
-        """Test GET /api/fractal/v2.1/admin/policy/applications"""
-        success, data, error = self.make_request(
-            'GET', 
-            'api/fractal/v2.1/admin/policy/applications',
-            params={'limit': '10'}
-        )
-        
-        if success and data:
-            if data.get('ok') and 'applications' in data and 'total' in data:
-                applications = data['applications']
-                total = data['total']
-                
-                # Each application should have expected fields
-                for app in applications:
-                    expected_fields = ['applicationId', 'proposalId', 'appliedAt', 'appliedBy', 'previousPolicyHash', 'newPolicyHash']
-                    has_fields = all(field in app for field in expected_fields)
-                    
-                    if not has_fields:
-                        self.log_test("Get Audit Trail", False, data, f"Application missing expected fields: {app}")
-                        return None
-                
-                self.log_test("Get Audit Trail", True, data)
-                return applications
-            else:
-                self.log_test("Get Audit Trail", False, data, "Missing ok=true, applications, or total fields")
-        else:
-            self.log_test("Get Audit Trail", False, data, error)
-        
-        return None
-
-    def test_proposal_stats(self):
-        """Test GET /api/fractal/v2.1/admin/proposal/stats"""
-        success, data, error = self.make_request(
-            'GET', 
-            'api/fractal/v2.1/admin/proposal/stats'
-        )
-        
-        if success and data:
-            if data.get('ok') and 'stats' in data:
-                stats = data['stats']
-                expected_fields = ['total', 'byStatus', 'bySource']
-                has_fields = all(field in stats for field in expected_fields)
-                
-                if has_fields:
-                    # Check that stats make sense
-                    total = stats.get('total', 0)
-                    by_status = stats.get('byStatus', {})
-                    by_source = stats.get('bySource', {})
-                    
-                    # Sum of byStatus should equal total
-                    status_sum = sum(by_status.values())
-                    if total == status_sum:
-                        self.log_test("Proposal Stats", True, data)
-                        return stats
-                    else:
-                        self.log_test("Proposal Stats", False, data, f"Total mismatch: total={total}, status_sum={status_sum}")
-                else:
-                    self.log_test("Proposal Stats", False, data, "Missing expected stats fields")
-            else:
-                self.log_test("Proposal Stats", False, data, "Missing ok=true or stats field")
-        else:
-            self.log_test("Proposal Stats", False, data, error)
-        
-        return None
-
-    def test_rollback_functionality(self):
-        """Test POST /api/fractal/v2.1/admin/policy/rollback/:applicationId"""
-        # First get applications to see if any exist
-        applications = self.test_get_audit_trail()
-        
-        if not applications or len(applications) == 0:
-            self.log_test("Rollback Functionality", True, None, "No applications to rollback (expected)")
-            return None
-        
-        # Try to rollback the most recent application
-        recent_app = applications[0]
-        app_id = recent_app.get('applicationId')
-        
-        if not app_id:
-            self.log_test("Rollback Functionality", False, applications, "No applicationId found")
-            return None
-        
-        rollback_data = {
-            "reason": "Test rollback for automation testing",
-            "actor": "ADMIN"
-        }
-        
-        success, data, error = self.make_request(
-            'POST', 
-            f'api/fractal/v2.1/admin/policy/rollback/{app_id}',
-            data=rollback_data
-        )
-        
-        if success and data:
-            if data.get('ok'):
-                # Rollback succeeded
-                self.log_test("Rollback Functionality", True, data)
-                return data
-            else:
-                # Check if error is acceptable (e.g., already rolled back)
-                error_msg = data.get('error', '').lower()
-                if 'already' in error_msg or 'not found' in error_msg:
-                    self.log_test("Rollback Functionality", True, data, f"Expected error: {data.get('error')}")
-                else:
-                    self.log_test("Rollback Functionality", False, data, f"Unexpected error: {data.get('error')}")
-        else:
-            self.log_test("Rollback Functionality", False, data, error)
-        
-        return None
-
-    def run_all_tests(self):
-        """Run all BLOCK 79 Proposal Persistence tests"""
-        print(f"🚀 Starting BLOCK 79 Proposal Persistence + Audit Trail Tests")
-        print(f"📡 Backend URL: {self.base_url}")
-        print(f"🪙 Symbol: {self.symbol}")
-        print("=" * 80)
-        
-        print("\n📝 BLOCK 79.1: Proposal CRUD Operations")
-        self.test_create_proposal()
-        self.test_list_proposals()
-        self.test_get_latest_proposal()
-        self.test_get_proposal_by_id()
-        
-        print("\n🔄 BLOCK 79.2: Proposal Lifecycle Actions")
-        self.test_reject_proposal()
-        self.test_apply_proposal_governance_lock()
-        
-        print("\n📊 BLOCK 79.3: Policy State & Audit Trail")
-        self.test_get_current_policy()
-        self.test_get_audit_trail()
-        self.test_proposal_stats()
-        
-        print("\n🔙 BLOCK 79.4: Rollback Functionality")
-        self.test_rollback_functionality()
-        
-        # Summary
-        print("\n" + "=" * 80)
-        print(f"📊 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        
-        if self.tests_passed == self.tests_run:
-            print("🎉 All BLOCK 79 Proposal Persistence tests passed!")
-            return 0
-        else:
-            print(f"⚠️  {self.tests_run - self.tests_passed} tests failed")
-            return 1
+        return self.tests_passed == self.tests_run
 
 def main():
-    """Main test runner for BLOCK 79"""
-    tester = Block79ProposalTester()
-    return tester.run_all_tests()
+    """Main test runner"""
+    tester = FractalIntelTimelineTest()
+    
+    try:
+        # Test core Intel Timeline endpoints
+        tester.test_intel_timeline_endpoints()
+        
+        # Test error cases
+        tester.test_error_cases()
+        
+        # Print summary
+        all_passed = tester.print_summary()
+        
+        return 0 if all_passed else 1
+        
+    except Exception as e:
+        print(f"💥 Fatal test error: {str(e)}")
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())
