@@ -340,6 +340,123 @@ function KpiCard({ label, value, suffix = '', color, isText }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// INTEL ALERTS TABLE (BLOCK 83)
+// ═══════════════════════════════════════════════════════════════
+
+function IntelAlertsTable({ symbol = 'BTC', source = 'LIVE' }) {
+  const [alerts, setAlerts] = useState([]);
+  const [expanded, setExpanded] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${API_BASE}/api/fractal/v2.1/admin/intel/alerts?symbol=${symbol}&source=${source}&limit=20`)
+      .then(r => r.json())
+      .then(d => {
+        setAlerts(d.items || []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [symbol, source]);
+
+  const severityColor = {
+    CRITICAL: 'text-red-600',
+    WARN: 'text-amber-600',
+    INFO: 'text-blue-600',
+  };
+
+  const eventLabel = {
+    LOCK_ENTER: '🔒 Lock Enter',
+    LOCK_EXIT: '🔓 Lock Exit',
+    DOMINANCE_SHIFT: '🔄 Dom Shift',
+    PHASE_DOWNGRADE: '⬇️ Phase Down',
+  };
+
+  const statusColor = {
+    sent: 'bg-emerald-100 text-emerald-700',
+    stored_no_send: 'bg-slate-100 text-slate-600',
+    rate_limited: 'bg-amber-100 text-amber-700',
+    dedup_skip: 'bg-gray-100 text-gray-500',
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <h3 className="font-bold text-gray-900 mb-3">🧠 Intelligence Event Alerts ({source})</h3>
+        <div className="text-gray-500 text-sm py-4 text-center">Loading alerts...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-4" data-testid="intel-alerts-table">
+      <h3 className="font-bold text-gray-900 mb-3">🧠 Intelligence Event Alerts ({source})</h3>
+      
+      {alerts.length === 0 ? (
+        <div className="text-gray-500 text-sm py-4 text-center">
+          No alerts yet. Events will appear after daily runs when LIVE samples ≥ 15.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left border-b border-gray-200 text-gray-500">
+                <th className="pb-2">Date</th>
+                <th className="pb-2">Event</th>
+                <th className="pb-2">Severity</th>
+                <th className="pb-2">Status</th>
+                <th className="pb-2">Consensus</th>
+                <th className="pb-2">Phase</th>
+                <th className="pb-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {alerts.map((a) => (
+                <React.Fragment key={a._id}>
+                  <tr className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="py-2 text-gray-600">{a.date}</td>
+                    <td className="py-2">{eventLabel[a.eventType] || a.eventType}</td>
+                    <td className={`py-2 font-semibold ${severityColor[a.severity]}`}>
+                      {a.severity}
+                    </td>
+                    <td className="py-2">
+                      <span className={`px-2 py-0.5 rounded text-xs ${a.sent ? statusColor.sent : statusColor.stored_no_send}`}>
+                        {a.sent ? 'SENT' : 'STORED'}
+                      </span>
+                    </td>
+                    <td className="py-2 text-gray-600">{a.payload?.consensusIndex ?? '-'}</td>
+                    <td className="py-2 text-gray-600">
+                      {a.payload?.phaseType ?? '-'} ({a.payload?.phaseGrade ?? '-'})
+                    </td>
+                    <td className="py-2">
+                      <button
+                        onClick={() => setExpanded(expanded === a._id ? null : a._id)}
+                        className="text-blue-600 hover:text-blue-800 text-xs"
+                      >
+                        {expanded === a._id ? 'Hide' : 'Details'}
+                      </button>
+                    </td>
+                  </tr>
+                  {expanded === a._id && (
+                    <tr>
+                      <td colSpan={7} className="p-3 bg-slate-50">
+                        <pre className="text-xs text-gray-600 whitespace-pre-wrap overflow-auto max-h-48">
+                          {JSON.stringify(a.payload, null, 2)}
+                        </pre>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // BACKFILL PANEL
 // ═══════════════════════════════════════════════════════════════
 
