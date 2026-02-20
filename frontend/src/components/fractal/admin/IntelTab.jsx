@@ -310,7 +310,7 @@ function PhaseStrengthTimeline({ series, alerts = [] }) {
 // DOMINANCE HISTORY
 // ═══════════════════════════════════════════════════════════════
 
-function DominanceHistory({ series }) {
+function DominanceHistory({ series, alerts = [] }) {
   if (!series || series.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -326,38 +326,69 @@ function DominanceHistory({ series }) {
     TIMING: '#a855f7',
   };
   
+  // Create alerts map by date for markers
+  const alertsByDate = {};
+  alerts.forEach(a => {
+    if (!alertsByDate[a.date]) alertsByDate[a.date] = [];
+    alertsByDate[a.date].push(a);
+  });
+  
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4" data-testid="dominance-history">
       <h3 className="font-bold text-gray-900 mb-3">Dominance History</h3>
       
-      {/* Timeline strip */}
-      <div className="flex h-10 rounded-lg overflow-hidden mb-3">
-        {series.map((d, i) => (
-          <div
-            key={i}
-            className="relative flex-1 min-w-[2px] group cursor-pointer"
-            style={{ backgroundColor: tierColors[d.dominanceTier] || '#9ca3af' }}
-            title={`${d.date}: ${d.dominanceTier}${d.structuralLock ? ' 🔒' : ''}`}
-          >
-            {/* Lock marker */}
-            {d.structuralLock && (
-              <div className="absolute inset-x-0 top-0 h-1.5 bg-amber-400"></div>
-            )}
-            {/* High conflict marker */}
-            {d.conflictLevel === 'HIGH' && (
-              <div className="absolute inset-x-0 bottom-0 h-1.5 bg-red-500"></div>
-            )}
-          </div>
-        ))}
+      {/* Timeline strip with event markers */}
+      <div className="relative">
+        <div className="flex h-10 rounded-lg overflow-hidden mb-1">
+          {series.map((d, i) => (
+            <div
+              key={i}
+              className="relative flex-1 min-w-[2px] group cursor-pointer"
+              style={{ backgroundColor: tierColors[d.dominanceTier] || '#9ca3af' }}
+              title={`${d.date}: ${d.dominanceTier}${d.structuralLock ? ' 🔒' : ''}`}
+            >
+              {/* Lock marker */}
+              {d.structuralLock && (
+                <div className="absolute inset-x-0 top-0 h-1.5 bg-amber-400"></div>
+              )}
+              {/* High conflict marker */}
+              {d.conflictLevel === 'HIGH' && (
+                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-red-500"></div>
+              )}
+            </div>
+          ))}
+        </div>
+        
+        {/* BLOCK 84: Event markers above the bar */}
+        <div className="flex h-5 -mt-1">
+          {series.map((d, i) => {
+            const dateAlerts = alertsByDate[d.date] || [];
+            const hasShift = dateAlerts.some(a => a.eventType === 'DOMINANCE_SHIFT');
+            const hasLockEvent = dateAlerts.some(a => a.eventType === 'LOCK_ENTER' || a.eventType === 'LOCK_EXIT');
+            
+            return (
+              <div key={i} className="flex-1 min-w-[2px] flex items-end justify-center">
+                {hasShift && (
+                  <span className="text-amber-500 text-xs" title="Dominance Shift">▲</span>
+                )}
+                {hasLockEvent && (
+                  <span className="text-red-500 text-xs" title="Lock Event">●</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
       
       {/* Legend */}
-      <div className="flex items-center gap-4 text-xs text-gray-500">
+      <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
         <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{backgroundColor: tierColors.STRUCTURE}}></span> Structure</div>
         <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{backgroundColor: tierColors.TACTICAL}}></span> Tactical</div>
         <div className="flex items-center gap-1"><span className="w-3 h-3 rounded" style={{backgroundColor: tierColors.TIMING}}></span> Timing</div>
         <div className="flex items-center gap-1"><span className="w-3 h-1.5 bg-amber-400 rounded"></span> Locked</div>
         <div className="flex items-center gap-1"><span className="w-3 h-1.5 bg-red-500 rounded"></span> High Conflict</div>
+        <div className="flex items-center gap-1"><span className="text-amber-500">▲</span> Dom Shift</div>
+        <div className="flex items-center gap-1"><span className="text-red-500">●</span> Lock Event</div>
       </div>
     </div>
   );
