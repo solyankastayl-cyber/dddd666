@@ -1,13 +1,13 @@
 # Fractal V2.1 — PRD (Product Requirements Document)
 
 **Last Updated:** 2026-02-20  
-**Status:** BLOCK 82-83 Complete
+**Status:** BLOCK 82-85 Complete, Scheduler ENABLED
 
 ---
 
 ## Original Problem Statement
 
-Клонировать репозиторий https://github.com/solyankastayl-cyber/ddd5555, поднять фронт, бэк, админку и работать только с областью Fractal. Реализовать BLOCK 82-83.
+Клонировать репозиторий https://github.com/solyankastayl-cyber/ddd5555, поднять фронт, бэк, админку и работать только с областью Fractal. Реализовать BLOCK 82-85.
 
 ---
 
@@ -29,54 +29,38 @@
 ### BLOCK 82 — Intel Timeline (Phase Strength + Dominance History)
 **Date:** 2026-02-20
 
-**Backend:**
-- `intel-timeline/intel-timeline.model.ts` — MongoDB schema for `intel_timeline_daily` collection
-- `intel-timeline/intel-timeline.service.ts` — Timeline read service with stats computation
-- `intel-timeline/intel-timeline.writer.ts` — Idempotent upsert writer
-- `intel-timeline/intel-timeline.routes.ts` — API endpoints
+- MongoDB collection `intel_timeline_daily` with phase/dominance snapshots
+- API: timeline, latest, counts, snapshot, backfill
+- Frontend: Phase Strength graph, Dominance History bar, KPI Summary
 
-**API Endpoints:**
-- `GET /api/fractal/v2.1/admin/intel/timeline` — Get timeline with stats
-- `GET /api/fractal/v2.1/admin/intel/latest` — Get latest snapshot
-- `GET /api/fractal/v2.1/admin/intel/counts` — Get counts by source
-- `POST /api/fractal/v2.1/admin/intel/snapshot` — Manual snapshot write
-- `POST /api/fractal/v2.1/admin/intel/backfill` — Backfill V2014/V2020
-
-**Frontend:**
-- `IntelTab.jsx` — Admin tab with:
-  - Phase Strength Timeline (SVG graph with grade colors A-F)
-  - Dominance History (color-coded bar: Structure/Tactical/Timing)
-  - KPI Summary (Lock Days, Dominance %, Switch Count, Avg Score, Trend)
-  - Backfill Panel
-
----
-
-### BLOCK 83 — Intel Alerts (Event-based Alerts)
+### BLOCK 83 — Intel Alerts Engine (Event-based Alerts)
 **Date:** 2026-02-20
 
-**Backend:**
-- `intel-alerts/intel-alerts.model.ts` — MongoDB schema for `intel_event_alerts`
-- `intel-alerts/intel-alerts.detector.ts` — State-change event detector
-- `intel-alerts/intel-alerts.service.ts` — Telegram sender + rate limiting
-- `intel-alerts/intel-alerts.routes.ts` — API endpoints
+- Event detection: LOCK_ENTER, LOCK_EXIT, DOMINANCE_SHIFT, PHASE_DOWNGRADE
+- Telegram integration with rate limiting (3/24h, CRITICAL bypass)
+- Frontend: Intelligence Event Alerts table
 
-**Events Detected:**
-- `LOCK_ENTER` — Structural lock entered
-- `LOCK_EXIT` — Structural lock exited  
-- `DOMINANCE_SHIFT` — Tier dominance changed
-- `PHASE_DOWNGRADE` — Phase grade dropped ≥2 levels
+### BLOCK 84 — Visual Event Markers
+**Date:** 2026-02-20
 
-**Rate Limiting:**
-- Max 3 non-critical alerts per 24h
-- CRITICAL alerts bypass limit
-- Only sent when source=LIVE and liveSamples≥15
+- Event markers (🔒🔓▲▼) on Phase Strength Timeline
+- Event markers (▲●) on Dominance History bar
+- Hover tooltips for event details
 
-**Frontend:**
-- Intelligence Event Alerts table in IntelTab
+### BLOCK 85 — Model Health Composite Score
+**Date:** 2026-02-20
 
----
+- Composite score (0-100) from 5 components:
+  - Performance (LIVE vs Bootstrap): 30%
+  - Drift Penalty: 20%
+  - Phase Score: 20%
+  - Divergence Score: 15%
+  - Stability Score: 15%
+- Bands: STRONG (≥80), STABLE (≥65), MODERATE (≥50), WEAK (<50)
+- API: `/api/fractal/v2.1/admin/model-health`
+- Frontend: Model Health Badge in Intel Tab header
 
-### Daily Run Pipeline Integration
+### Daily Run Pipeline
 **Steps:**
 1. SNAPSHOT_WRITE
 2. OUTCOME_RESOLVE
@@ -84,68 +68,76 @@
 4. ALERTS
 5. AUDIT_LOG
 6. MEMORY_SNAPSHOTS
-7. **INTEL_TIMELINE_WRITE** ← NEW (BLOCK 82)
-8. **INTEL_EVENT_ALERTS** ← NEW (BLOCK 83)
+7. INTEL_TIMELINE_WRITE (BLOCK 82)
+8. INTEL_EVENT_ALERTS (BLOCK 83)
+
+### Scheduler
+- **Status:** ENABLED
+- **Schedule:** 00:10 UTC daily
+- **Next Run:** 2026-02-21 00:10 UTC
 
 ---
 
 ## Current Data Status
 
-| Source | Records | Date Range |
-|--------|---------|------------|
-| LIVE | 1 | 2026-02-20 |
-| V2020 | 2192 | 2020-01-01 to 2025-12-31 |
-| V2014 | 2191 | 2014-01-01 to 2019-12-31 |
+| Source | Records | Description |
+|--------|---------|-------------|
+| LIVE | 1 | Today's snapshot |
+| V2020 | 2192 | 2020-2025 backfill |
+| V2014 | 2191 | 2014-2019 backfill |
 
----
-
-## Telegram Configuration
-
-**Encrypted Token:** `/backend/telegram_encrypted.txt`  
-**Decryption Key:** `OEcd5DNtFaxDjYEF9aqk4hskCyUYsDiYZGYh0XfPyIw=`
-
-Environment Variables:
-```
-TG_BOT_TOKEN=<encrypted>
-TG_ADMIN_CHAT_ID=@F_FOMO_bot
-```
+### Current Model Health
+- **Score:** 77%
+- **Band:** STABLE
+- **Components:** Perf=96, Drift=80, Phase=50, Div=50, Stability=100
 
 ---
 
 ## Prioritized Backlog
 
-### P0 (Critical)
+### P0 (Critical) ✅
 - [x] BLOCK 82: Intel Timeline
 - [x] BLOCK 83: Intel Alerts Engine
-- [x] Daily run pipeline integration
+- [x] BLOCK 84: Visual Event Markers
+- [x] BLOCK 85: Model Health Composite Score
+- [x] Scheduler enabled
 
 ### P1 (High)
-- [ ] Enable Scheduler (00:10 UTC daily)
 - [ ] Telegram alerts testing with real credentials
+- [ ] Accumulate LIVE samples (≥15 for alerts, ≥30 for governance)
 
 ### P2 (Medium)
-- [ ] BLOCK 84: Dominance Event Markers in Timeline
-- [ ] BLOCK 85: LIVE Confidence Meter
+- [ ] BLOCK 86: Multi-Asset Expansion (ETH)
+- [ ] BLOCK 87: Adaptive Weight Learning v2
 - [ ] Historical query for V2014/V2020 (custom date range)
 
 ### P3 (Future)
-- [ ] Multi-Asset (ETH) support
-- [ ] Adaptive Learning v2
+- [ ] WebSocket real-time updates
 - [ ] Phase Strength/Dominance Timeline export
+- [ ] Dashboard customization
 
 ---
 
 ## Next Tasks
 
-1. **Enable Scheduler** — Admin → Ops → Enable scheduler
-2. **Test Telegram** — Verify alerts reach @F_FOMO_bot
-3. **Accumulate LIVE data** — After 15 days, alerts will activate
-4. **BLOCK 84** — Visual event markers on timeline
+1. **Monitor LIVE accumulation** — Wait 7-15 days for alerts activation
+2. **Test Telegram** — Verify alerts reach @F_FOMO_bot when samples ≥15
+3. **Governance unlock** — After 30 LIVE days, APPLY becomes available
 
 ---
 
-## User Personas
+## System Status Summary
 
-1. **Institutional Analyst** — Monitors phase strength, dominance shifts, governance locks
-2. **Risk Manager** — Receives Telegram alerts for critical events
-3. **Quant Developer** — Uses API for backtesting and analysis
+```
+Fractal V2.1 — Institutional Panel
+
+┌─────────────────────────────────────┐
+│ Model Health: 77% STABLE            │
+│ Phase: NEUTRAL (C) → Trend: FLAT    │
+│ Dominance: STRUCTURE (100%)         │
+│ Lock: OFF | Conflict: LOW           │
+│ Drift: WATCH | Confidence: LOW      │
+│ LIVE Samples: 1 (need ≥15 for alerts)│
+│ Scheduler: ENABLED (00:10 UTC)      │
+└─────────────────────────────────────┘
+```
