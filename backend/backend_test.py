@@ -273,7 +273,8 @@ class FractalIntelTimelineTest:
         if failed_tests:
             print(f"\n❌ Failed tests ({len(failed_tests)}):")
             for test in failed_tests:
-                print(f"   • {test['name']}: {test.get('error', f'HTTP {test.get('status_code')}')}")
+                error_msg = test.get('error', f"HTTP {test.get('status_code')}")
+                print(f"   • {test['name']}: {error_msg}")
         
         return self.tests_passed == self.tests_run
 
