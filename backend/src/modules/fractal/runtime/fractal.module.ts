@@ -225,6 +225,9 @@ export async function registerFractalModule(fastify: FastifyInstance, deps?: Par
   
   // BLOCK 81 — Drift Intelligence (LIVE vs V2014/V2020)
   await fastify.register(driftIntelligenceRoutes);
+  
+  // BLOCK 82 — Intel Timeline (Phase Strength + Dominance History)
+  await fastify.register(registerIntelTimelineRoutes);
 
   // Run bootstrap in background (non-blocking)
   const bootstrap = new FractalBootstrapService();
