@@ -233,6 +233,9 @@ export async function registerFractalModule(fastify: FastifyInstance, deps?: Par
   
   // BLOCK 83 — Intel Alerts (Event-based alerts)
   await fastify.register(registerIntelAlertsRoutes);
+  
+  // BLOCK 85 — Model Health Composite Score
+  await fastify.register(registerModelHealthRoutes);
 
   // Run bootstrap in background (non-blocking)
   const bootstrap = new FractalBootstrapService();
