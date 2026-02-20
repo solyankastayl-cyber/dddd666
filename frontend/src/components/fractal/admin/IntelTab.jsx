@@ -185,7 +185,7 @@ function IntelHeader({ stats, latest, windowDays, onWindowChange, source, onSour
 // PHASE STRENGTH TIMELINE
 // ═══════════════════════════════════════════════════════════════
 
-function PhaseStrengthTimeline({ series }) {
+function PhaseStrengthTimeline({ series, alerts = [] }) {
   if (!series || series.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-4">
@@ -197,6 +197,21 @@ function PhaseStrengthTimeline({ series }) {
   
   const maxScore = 100;
   const height = 200;
+  
+  // Event marker icons
+  const eventIcons = {
+    LOCK_ENTER: '🔒',
+    LOCK_EXIT: '🔓',
+    DOMINANCE_SHIFT: '▲',
+    PHASE_DOWNGRADE: '▼',
+  };
+  
+  // Create alerts map by date
+  const alertsByDate = {};
+  alerts.forEach(a => {
+    if (!alertsByDate[a.date]) alertsByDate[a.date] = [];
+    alertsByDate[a.date].push(a);
+  });
   
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4" data-testid="phase-timeline">
@@ -229,9 +244,12 @@ function PhaseStrengthTimeline({ series }) {
           
           {/* Data points */}
           {series.map((d, i) => {
-            const x = (i / (series.length - 1 || 1)) * 100 + '%';
+            const xPct = (i / (series.length - 1 || 1)) * 100;
+            const x = xPct + '%';
             const y = height - (d.phaseScore / maxScore) * height;
             const gradeColors = { A: '#10b981', B: '#3b82f6', C: '#f59e0b', D: '#f97316', F: '#ef4444' };
+            const dateAlerts = alertsByDate[d.date] || [];
+            
             return (
               <g key={i}>
                 <circle
@@ -255,6 +273,21 @@ function PhaseStrengthTimeline({ series }) {
                     opacity={0.5}
                   />
                 )}
+                {/* BLOCK 84: Event Markers */}
+                {dateAlerts.map((alert, ai) => (
+                  <text
+                    key={`${i}-${ai}`}
+                    x={x}
+                    y={y - 12 - (ai * 10)}
+                    fontSize="10"
+                    textAnchor="middle"
+                    className="cursor-pointer"
+                    style={{ pointerEvents: 'all' }}
+                  >
+                    <title>{`${alert.eventType}: ${alert.severity}`}</title>
+                    {eventIcons[alert.eventType] || '•'}
+                  </text>
+                ))}
               </g>
             );
           })}
