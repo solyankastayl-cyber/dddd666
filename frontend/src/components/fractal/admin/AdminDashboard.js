@@ -24,6 +24,7 @@ import GovernanceTab from './GovernanceTab';
 import BackfillProgressPanel from './BackfillProgressPanel';
 import DriftTab from './DriftTab';
 import OpsTab from './OpsTab';
+import IntelTab from './IntelTab';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 
@@ -35,6 +36,7 @@ const TABS = [
   { id: 'attribution', label: 'Attribution' },
   { id: 'governance', label: 'Governance' },
   { id: 'drift', label: 'Drift' },
+  { id: 'intel', label: 'Intel' },
   { id: 'backfill', label: 'Backfill' },
   { id: 'ops', label: 'Ops' }
 ];
