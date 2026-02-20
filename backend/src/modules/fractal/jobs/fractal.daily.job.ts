@@ -404,6 +404,117 @@ export class FractalDailyJobService {
         console.error(`[DailyJob] Memory error:`, err);
       }
       
+      // ═══════════════════════════════════════════════════════════
+      // STEP 7: BLOCK 82 — Intel Timeline Write (LIVE)
+      // ═══════════════════════════════════════════════════════════
+      const step7: DailyJobStep = {
+        name: 'INTEL_TIMELINE_WRITE',
+        startedAt: new Date(),
+        status: 'RUNNING'
+      };
+      context.steps.push(step7);
+      
+      let intelTimelineResult: any = { written: false };
+      try {
+        console.log(`[DailyJob] Step 7: Writing Intel Timeline snapshot (BLOCK 82)...`);
+        
+        // Get current state from consensus/phase services (simplified - uses defaults for now)
+        // In full implementation, this would pull from consensus service
+        const writeResult = await intelTimelineWriterService.writeLiveSnapshot({
+          symbol,
+          phaseType: 'NEUTRAL',
+          phaseGrade: 'C',
+          phaseScore: 50,
+          phaseSharpe: 0,
+          phaseHitRate: 0.5,
+          phaseExpectancy: 0,
+          phaseSamples: resolveResult?.resolved || 0,
+          dominanceTier: 'STRUCTURE',
+          structuralLock: false,
+          timingOverrideBlocked: false,
+          tierWeights: { structure: 0.5, tactical: 0.3, timing: 0.2 },
+          volRegime: 'NORMAL',
+          divergenceGrade: 'C',
+          divergenceScore: 50,
+          finalAction: 'HOLD',
+          finalSize: 0,
+          consensusIndex: 50,
+          conflictLevel: 'LOW',
+        });
+        
+        intelTimelineResult = writeResult;
+        step7.result = writeResult;
+        step7.status = 'SUCCESS';
+        step7.completedAt = new Date();
+        
+        console.log(`[DailyJob] Intel Timeline: written=${writeResult.upserted}, date=${writeResult.date}`);
+      } catch (err: any) {
+        step7.status = 'FAILED';
+        step7.error = err.message;
+        step7.completedAt = new Date();
+        errors.push(`INTEL_TIMELINE_WRITE: ${err.message}`);
+        console.error(`[DailyJob] Intel Timeline error:`, err);
+      }
+      
+      // ═══════════════════════════════════════════════════════════
+      // STEP 8: BLOCK 83 — Intel Event Alerts Check
+      // ═══════════════════════════════════════════════════════════
+      const step8: DailyJobStep = {
+        name: 'INTEL_EVENT_ALERTS',
+        startedAt: new Date(),
+        status: 'RUNNING'
+      };
+      context.steps.push(step8);
+      
+      let intelAlertsResult: any = { detected: 0, results: [] };
+      try {
+        console.log(`[DailyJob] Step 8: Checking Intel Event Alerts (BLOCK 83)...`);
+        
+        const today = new Date().toISOString().split('T')[0];
+        const yesterdayDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        // Get yesterday and today from intel_timeline_daily
+        const [yesterday, todayDoc] = await Promise.all([
+          IntelTimelineModel.findOne({ symbol, source: 'LIVE', date: yesterdayDate }).lean(),
+          IntelTimelineModel.findOne({ symbol, source: 'LIVE', date: today }).lean(),
+        ]);
+        
+        if (!yesterday || !todayDoc) {
+          step8.result = { skipped: true, reason: 'missing_intel_timeline' };
+          step8.status = 'SUCCESS';
+          step8.completedAt = new Date();
+          console.log(`[DailyJob] Intel Alerts: skipped (missing timeline data)`);
+        } else {
+          // Detect events
+          const detected = detectIntelEvents(yesterday as any, todayDoc as any);
+          
+          // Get live samples count
+          const liveSamples = (todayDoc as any).phaseSamples || 0;
+          
+          // Process alerts
+          const results = await intelAlertsService.runForDetectedEvents({
+            symbol,
+            source: 'LIVE',
+            date: today,
+            liveSamples,
+            detected,
+          });
+          
+          intelAlertsResult = { detected: detected.length, results };
+          step8.result = intelAlertsResult;
+          step8.status = 'SUCCESS';
+          step8.completedAt = new Date();
+          
+          console.log(`[DailyJob] Intel Alerts: detected=${detected.length}, processed=${results.length}`);
+        }
+      } catch (err: any) {
+        step8.status = 'FAILED';
+        step8.error = err.message;
+        step8.completedAt = new Date();
+        errors.push(`INTEL_EVENT_ALERTS: ${err.message}`);
+        console.error(`[DailyJob] Intel Alerts error:`, err);
+      }
+      
       // Complete context
       context.completedAt = new Date();
       context.status = errors.length === 0 ? 'SUCCESS' : 'FAILED';
