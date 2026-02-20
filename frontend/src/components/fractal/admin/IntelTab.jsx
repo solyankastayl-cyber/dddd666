@@ -13,6 +13,45 @@ import React, { useState, useEffect, useCallback } from 'react';
 const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 
 // ═══════════════════════════════════════════════════════════════
+// MODEL HEALTH BADGE (BLOCK 85)
+// ═══════════════════════════════════════════════════════════════
+
+function ModelHealthBadge() {
+  const [health, setHealth] = useState(null);
+  
+  useEffect(() => {
+    fetch(`${API_BASE}/api/fractal/v2.1/admin/model-health?symbol=BTC`)
+      .then(r => r.json())
+      .then(d => d.ok && setHealth(d))
+      .catch(() => {});
+  }, []);
+  
+  if (!health) return null;
+  
+  const bandColors = {
+    STRONG: 'bg-emerald-500',
+    STABLE: 'bg-blue-500',
+    MODERATE: 'bg-amber-500',
+    WEAK: 'bg-red-500',
+  };
+  
+  return (
+    <div className="bg-slate-800 rounded-lg px-4 py-2" data-testid="model-health-badge">
+      <div className="text-xs text-slate-400 mb-1">Model Health</div>
+      <div className="flex items-center gap-2">
+        <span className="text-2xl font-bold text-white">{health.score}%</span>
+        <span className={`px-2 py-0.5 rounded text-xs font-medium text-white ${bandColors[health.band]}`}>
+          {health.band}
+        </span>
+      </div>
+      <div className="text-xs text-slate-500 mt-1">
+        Perf: {health.components?.performanceScore} | Drift: {health.components?.driftPenalty} | Phase: {health.components?.phaseScore}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // BADGES & HELPERS
 // ═══════════════════════════════════════════════════════════════
 
