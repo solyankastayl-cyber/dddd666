@@ -643,6 +643,7 @@ function BackfillPanel({ counts, onBackfill }) {
 export function IntelTab() {
   const [data, setData] = useState(null);
   const [counts, setCounts] = useState(null);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [windowDays, setWindowDays] = useState(90);
@@ -651,13 +652,15 @@ export function IntelTab() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [timelineRes, countsRes] = await Promise.all([
+      const [timelineRes, countsRes, alertsRes] = await Promise.all([
         fetch(`${API_BASE}/api/fractal/v2.1/admin/intel/timeline?symbol=BTC&source=${source}&window=${windowDays}`),
         fetch(`${API_BASE}/api/fractal/v2.1/admin/intel/counts?symbol=BTC`),
+        fetch(`${API_BASE}/api/fractal/v2.1/admin/intel/alerts?symbol=BTC&source=${source}&limit=200`),
       ]);
       
       const timeline = await timelineRes.json();
       const countsData = await countsRes.json();
+      const alertsData = await alertsRes.json();
       
       if (timeline.ok) {
         setData(timeline);
@@ -668,6 +671,10 @@ export function IntelTab() {
       
       if (countsData.ok) {
         setCounts(countsData.counts);
+      }
+      
+      if (alertsData.ok) {
+        setAlerts(alertsData.items || []);
       }
     } catch (err) {
       setError(err.message);
