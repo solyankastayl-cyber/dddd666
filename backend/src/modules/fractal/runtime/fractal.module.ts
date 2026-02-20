@@ -48,6 +48,7 @@ import { driftRoutes, driftAlertRoutes, consensusTimelineRoutes, driftIntelligen
 import { proposalRoutes } from '../proposal/index.js';
 import { schedulerRoutes } from '../ops/scheduler/index.js';
 import { registerIntelTimelineRoutes } from '../intel-timeline/index.js';
+import { registerIntelAlertsRoutes } from '../intel-alerts/index.js';
 
 // ═══════════════════════════════════════════════════════════════
 // BLOCK 42.1 — Host Dependencies Contract
