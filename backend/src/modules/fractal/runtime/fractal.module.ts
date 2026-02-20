@@ -47,6 +47,7 @@ import { bootstrapRoutes, institutionalBackfillRoutes } from '../bootstrap/index
 import { driftRoutes, driftAlertRoutes, consensusTimelineRoutes, driftIntelligenceRoutes } from '../drift/index.js';
 import { proposalRoutes } from '../proposal/index.js';
 import { schedulerRoutes } from '../ops/scheduler/index.js';
+import { registerIntelTimelineRoutes } from '../intel-timeline/index.js';
 
 // ═══════════════════════════════════════════════════════════════
 // BLOCK 42.1 — Host Dependencies Contract
