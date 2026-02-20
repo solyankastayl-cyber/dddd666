@@ -720,21 +720,24 @@ export function IntelTab() {
   
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6" data-testid="intel-tab">
-      {/* Header */}
-      <IntelHeader
-        stats={data?.stats}
-        latest={latest}
-        windowDays={windowDays}
-        onWindowChange={handleWindowChange}
-        source={source}
-        onSourceChange={handleSourceChange}
-      />
+      {/* Header with Model Health Badge */}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <IntelHeader
+          stats={data?.stats}
+          latest={latest}
+          windowDays={windowDays}
+          onWindowChange={handleWindowChange}
+          source={source}
+          onSourceChange={handleSourceChange}
+        />
+        <ModelHealthBadge />
+      </div>
       
-      {/* Phase Timeline */}
-      <PhaseStrengthTimeline series={data?.series} />
+      {/* Phase Timeline (BLOCK 84: with event markers) */}
+      <PhaseStrengthTimeline series={data?.series} alerts={alerts} />
       
-      {/* Dominance History */}
-      <DominanceHistory series={data?.series} />
+      {/* Dominance History (BLOCK 84: with event markers) */}
+      <DominanceHistory series={data?.series} alerts={alerts} />
       
       {/* KPI Summary */}
       <KpiSummary stats={data?.stats} />
