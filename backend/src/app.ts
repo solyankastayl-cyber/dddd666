@@ -100,47 +100,27 @@ export function buildApp(): FastifyInstance {
         const { registerFractalModule } = await import('./modules/fractal/index.js');
         await registerFractalModule(fastify);
         console.log('[BOOT] ✅ Fractal Module registered at /api/fractal/*');
-      } catch (err) {
-        console.error('[BOOT] Failed to register Fractal Module:', err);
-      }
-    });
-    
-    // Register BTC Terminal (BLOCK A - Final Product)
-    app.register(async (fastify) => {
-      fastify.log.info('[BOOT] Registering BTC Terminal (Final)...');
-      try {
+        
+        // Register BTC Terminal (BLOCK A - Final Product) in same context
+        console.log('[BOOT] Registering BTC Terminal (Final)...');
         const { registerBtcRoutes } = await import('./modules/btc/index.js');
         await registerBtcRoutes(fastify);
-        fastify.log.info('[BOOT] ✅ BTC Terminal registered at /api/btc/v2.1/*');
-      } catch (err: any) {
-        fastify.log.error(`[BOOT] Failed to register BTC Terminal: ${err.message}`);
-        console.error('[BOOT] BTC Error:', err);
-      }
-    });
-    
-    // Register SPX Terminal (BLOCK B - Building)
-    app.register(async (fastify) => {
-      fastify.log.info('[BOOT] Registering SPX Terminal (Building)...');
-      try {
+        console.log('[BOOT] ✅ BTC Terminal registered at /api/btc/v2.1/*');
+        
+        // Register SPX Terminal (BLOCK B - Building)
+        console.log('[BOOT] Registering SPX Terminal (Building)...');
         const { registerSpxRoutes } = await import('./modules/spx/index.js');
         await registerSpxRoutes(fastify);
-        fastify.log.info('[BOOT] ✅ SPX Terminal registered at /api/spx/v2.1/*');
-      } catch (err: any) {
-        fastify.log.error(`[BOOT] Failed to register SPX Terminal: ${err.message}`);
-        console.error('[BOOT] SPX Error:', err);
-      }
-    });
-    
-    // Register Combined Terminal (BLOCK C - Building)
-    app.register(async (fastify) => {
-      fastify.log.info('[BOOT] Registering Combined Terminal (Building)...');
-      try {
+        console.log('[BOOT] ✅ SPX Terminal registered at /api/spx/v2.1/*');
+        
+        // Register Combined Terminal (BLOCK C - Building)
+        console.log('[BOOT] Registering Combined Terminal (Building)...');
         const { registerCombinedRoutes } = await import('./modules/combined/index.js');
         await registerCombinedRoutes(fastify);
-        fastify.log.info('[BOOT] ✅ Combined Terminal registered at /api/combined/v2.1/*');
-      } catch (err: any) {
-        fastify.log.error(`[BOOT] Failed to register Combined Terminal: ${err.message}`);
-        console.error('[BOOT] Combined Error:', err);
+        console.log('[BOOT] ✅ Combined Terminal registered at /api/combined/v2.1/*');
+        
+      } catch (err) {
+        console.error('[BOOT] Failed to register modules:', err);
       }
     });
     
