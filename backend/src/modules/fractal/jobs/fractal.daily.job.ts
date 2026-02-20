@@ -23,6 +23,10 @@ import { sendAlertsToTelegram } from '../alerts/alert.tg.adapter.js';
 import { getQuotaStatus } from '../alerts/alert.quota.service.js';
 import { memorySnapshotWriterService } from '../memory/snapshot/snapshot-writer.service.js';
 import { outcomeResolverService as memoryOutcomeResolverService } from '../memory/outcome/outcome-resolver.service.js';
+// BLOCK 82-83: Intel Timeline + Alerts
+import { intelTimelineWriterService } from '../intel-timeline/intel-timeline.writer.js';
+import { IntelTimelineModel } from '../intel-timeline/intel-timeline.model.js';
+import { detectIntelEvents, intelAlertsService } from '../intel-alerts/index.js';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
