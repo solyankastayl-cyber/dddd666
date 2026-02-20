@@ -629,6 +629,9 @@ export function IntelTab() {
       {/* KPI Summary */}
       <KpiSummary stats={data?.stats} />
       
+      {/* Intel Alerts Table (BLOCK 83) */}
+      <IntelAlertsTable symbol="BTC" source={source} />
+      
       {/* Backfill Panel */}
       <BackfillPanel counts={counts} onBackfill={fetchData} />
       
