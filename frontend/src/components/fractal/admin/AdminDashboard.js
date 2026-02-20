@@ -186,6 +186,8 @@ export function AdminDashboard() {
         <GovernanceTab />
       ) : activeTab === 'drift' ? (
         <DriftTab />
+      ) : activeTab === 'intel' ? (
+        <IntelTab />
       ) : activeTab === 'backfill' ? (
         <div className="max-w-7xl mx-auto px-4 py-6">
           <BackfillProgressPanel />
