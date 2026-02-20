@@ -49,6 +49,7 @@ import { proposalRoutes } from '../proposal/index.js';
 import { schedulerRoutes } from '../ops/scheduler/index.js';
 import { registerIntelTimelineRoutes } from '../intel-timeline/index.js';
 import { registerIntelAlertsRoutes } from '../intel-alerts/index.js';
+import { registerModelHealthRoutes } from '../model-health/index.js';
 
 // ═══════════════════════════════════════════════════════════════
 // BLOCK 42.1 — Host Dependencies Contract
