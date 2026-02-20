@@ -277,6 +277,7 @@ export async function registerFractalModule(fastify: FastifyInstance, deps?: Par
   console.log('[Fractal] BLOCK 81: Drift Intelligence (LIVE vs V2014/V2020) registered');
   console.log('[Fractal] BLOCK 82: Intel Timeline (Phase Strength + Dominance History) registered');
   console.log('[Fractal] BLOCK 83: Intel Alerts (Event-based alerts) registered');
+  console.log('[Fractal] BLOCK 85: Model Health Composite Score registered');
   console.log('[Fractal] FREEZE: Contract v2.1.0 frozen, guards active');
   console.log('[Fractal] Chart + Overlay endpoints registered');
 }
