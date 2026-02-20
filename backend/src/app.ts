@@ -107,37 +107,40 @@ export function buildApp(): FastifyInstance {
     
     // Register BTC Terminal (BLOCK A - Final Product)
     app.register(async (fastify) => {
-      console.log('[BOOT] Registering BTC Terminal (Final)...');
+      fastify.log.info('[BOOT] Registering BTC Terminal (Final)...');
       try {
         const { registerBtcRoutes } = await import('./modules/btc/index.js');
         await registerBtcRoutes(fastify);
-        console.log('[BOOT] ✅ BTC Terminal registered at /api/btc/v2.1/*');
-      } catch (err) {
-        console.error('[BOOT] Failed to register BTC Terminal:', err);
+        fastify.log.info('[BOOT] ✅ BTC Terminal registered at /api/btc/v2.1/*');
+      } catch (err: any) {
+        fastify.log.error(`[BOOT] Failed to register BTC Terminal: ${err.message}`);
+        console.error('[BOOT] BTC Error:', err);
       }
     });
     
     // Register SPX Terminal (BLOCK B - Building)
     app.register(async (fastify) => {
-      console.log('[BOOT] Registering SPX Terminal (Building)...');
+      fastify.log.info('[BOOT] Registering SPX Terminal (Building)...');
       try {
         const { registerSpxRoutes } = await import('./modules/spx/index.js');
         await registerSpxRoutes(fastify);
-        console.log('[BOOT] ✅ SPX Terminal registered at /api/spx/v2.1/*');
-      } catch (err) {
-        console.error('[BOOT] Failed to register SPX Terminal:', err);
+        fastify.log.info('[BOOT] ✅ SPX Terminal registered at /api/spx/v2.1/*');
+      } catch (err: any) {
+        fastify.log.error(`[BOOT] Failed to register SPX Terminal: ${err.message}`);
+        console.error('[BOOT] SPX Error:', err);
       }
     });
     
     // Register Combined Terminal (BLOCK C - Building)
     app.register(async (fastify) => {
-      console.log('[BOOT] Registering Combined Terminal (Building)...');
+      fastify.log.info('[BOOT] Registering Combined Terminal (Building)...');
       try {
         const { registerCombinedRoutes } = await import('./modules/combined/index.js');
         await registerCombinedRoutes(fastify);
-        console.log('[BOOT] ✅ Combined Terminal registered at /api/combined/v2.1/*');
-      } catch (err) {
-        console.error('[BOOT] Failed to register Combined Terminal:', err);
+        fastify.log.info('[BOOT] ✅ Combined Terminal registered at /api/combined/v2.1/*');
+      } catch (err: any) {
+        fastify.log.error(`[BOOT] Failed to register Combined Terminal: ${err.message}`);
+        console.error('[BOOT] Combined Error:', err);
       }
     });
     
