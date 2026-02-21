@@ -12,6 +12,9 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import { connectMongo, disconnectMongo } from './db/mongoose.js';
 import { registerFractalModule } from './modules/fractal/index.js';
+import { registerBtcRoutes } from './modules/btc/index.js';
+import { registerSpxRoutes } from './modules/spx/index.js';
+import { registerCombinedRoutes } from './modules/combined/index.js';
 import { adminAuthRoutes } from './core/admin/admin.auth.routes.js';
 
 async function main() {
