@@ -139,17 +139,39 @@ export function AdminDashboard() {
     );
   }
   
+  const assetInfo = ASSET_INFO[currentAsset] || ASSET_INFO.BTC;
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Fractal V2.1 — Institutional Panel</h1>
-              <p className="text-sm text-gray-500">BTC</p>
-            </div>
             <div className="flex items-center gap-4">
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  {assetInfo.name} — Institutional Panel
+                </h1>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                    assetInfo.status === 'FINAL' 
+                      ? 'bg-emerald-100 text-emerald-800' 
+                      : 'bg-amber-100 text-amber-800'
+                  }`}>
+                    {assetInfo.status}
+                  </span>
+                  <span className="text-sm text-gray-500">v2.1</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {/* Asset Selector */}
+              <AssetSelector 
+                currentAsset={currentAsset} 
+                onSelect={handleAssetSelect}
+              />
+              
               <span className="text-xs text-gray-400">
                 Last update: {lastUpdate?.toLocaleTimeString() || '—'}
               </span>
