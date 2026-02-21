@@ -293,6 +293,66 @@ export async function registerSpxRoutes(fastify: FastifyInstance): Promise<void>
     return await getSpxStats();
   });
 
+  /**
+   * POST /api/fractal/v2.1/admin/spx/generate-mock
+   * Generate mock SPX data (for development when APIs are rate-limited)
+   * 
+   * WARNING: Generates synthetic data based on historical patterns.
+   * Use only for development/testing.
+   */
+  fastify.post('/api/fractal/v2.1/admin/spx/generate-mock', async (req) => {
+    const body = (req.body ?? {}) as any;
+    const from = body.from as string || '1950-01-03';
+    const to = body.to as string || '2025-12-31';
+    const replace = body.replace as boolean || false;
+
+    try {
+      // Optionally clear existing data
+      if (replace) {
+        await SpxCandleModel.deleteMany({});
+      }
+
+      // Generate mock candles
+      const candles = generateMockSpxCandles(from, to);
+
+      if (candles.length === 0) {
+        return { ok: false, error: 'No candles generated' };
+      }
+
+      // Bulk upsert
+      const ops = candles.map((c) => ({
+        updateOne: {
+          filter: { ts: c.ts },
+          update: { $setOnInsert: c },
+          upsert: true,
+        },
+      }));
+
+      const bulk = await SpxCandleModel.bulkWrite(ops, { ordered: false });
+      const written = bulk.upsertedCount ?? 0;
+      const skipped = candles.length - written;
+
+      // Cohort summary
+      const cohortCounts: Record<string, number> = {};
+      for (const c of candles) {
+        cohortCounts[c.cohort] = (cohortCounts[c.cohort] || 0) + 1;
+      }
+
+      return {
+        ok: true,
+        source: 'MOCK_GENERATOR',
+        range: { from, to },
+        generated: candles.length,
+        written,
+        skipped,
+        cohorts: cohortCounts,
+        warning: 'This is synthetic data based on historical patterns. Use for development only.',
+      };
+    } catch (e: any) {
+      return { ok: false, error: e.message };
+    }
+  });
+
   fastify.log.info(`[SPX] Terminal routes registered at ${prefix}/* (DATA FOUNDATION READY)`);
   fastify.log.info(`[SPX] Admin routes registered at /api/fractal/v2.1/admin/spx/*`);
 }
