@@ -54,6 +54,21 @@ async function main() {
   await registerFractalModule(app);
   console.log('[Fractal] ✅ Fractal Module registered');
   
+  // BLOCK A: Register BTC Terminal (Final Product)
+  console.log('[Fractal] Registering BTC Terminal (Final)...');
+  await registerBtcRoutes(app);
+  console.log('[Fractal] ✅ BTC Terminal registered at /api/btc/v2.1/*');
+  
+  // BLOCK B: Register SPX Terminal (Building)
+  console.log('[Fractal] Registering SPX Terminal (Building)...');
+  await registerSpxRoutes(app);
+  console.log('[Fractal] ✅ SPX Terminal registered at /api/spx/v2.1/*');
+  
+  // BLOCK C: Register Combined Terminal (Building)
+  console.log('[Fractal] Registering Combined Terminal (Building)...');
+  await registerCombinedRoutes(app);
+  console.log('[Fractal] ✅ Combined Terminal registered at /api/combined/v2.1/*');
+  
   // Register Admin Auth routes
   console.log('[Fractal] Registering Admin Auth...');
   await app.register(adminAuthRoutes, { prefix: '/api/admin' });
