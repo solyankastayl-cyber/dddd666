@@ -75,6 +75,24 @@ export default function SpxAdminTab() {
     }
   };
 
+  const handleIngestCsv = async (replace = false) => {
+    try {
+      setActionLoading(true);
+      const res = await fetch(`${API_BASE}/api/fractal/v2.1/admin/spx/ingest-csv`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replace }),
+      });
+      const data = await res.json();
+      setLastAction({ type: 'csv', ...data });
+      await fetchData();
+    } catch (e) {
+      setLastAction({ type: 'csv', ok: false, error: e.message });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleEnsureIndexes = async () => {
     try {
       setActionLoading(true);
