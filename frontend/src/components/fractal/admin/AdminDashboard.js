@@ -83,7 +83,12 @@ export function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/fractal/v2.1/admin/overview?symbol=BTC`);
+      // Use asset-specific API endpoint or fall back to fractal
+      const apiPath = currentAsset === 'BTC' 
+        ? `/api/fractal/v2.1/admin/overview?symbol=BTC`
+        : `/api/${currentAsset.toLowerCase()}/v2.1/status`;
+      
+      const response = await fetch(`${API_BASE}${apiPath}`);
       if (!response.ok) throw new Error('Failed to fetch admin overview');
       const result = await response.json();
       setData(result);
@@ -94,7 +99,7 @@ export function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentAsset]);
   
   useEffect(() => {
     fetchData();
