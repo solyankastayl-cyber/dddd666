@@ -206,7 +206,7 @@ export function AdminDashboard() {
 
           {/* Tabs */}
           <div className="flex gap-1 mt-4 border-b border-gray-200 -mb-px">
-            {TABS.map(tab => (
+            {getTabsForAsset(currentAsset).map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -225,7 +225,18 @@ export function AdminDashboard() {
       </header>
       
       {/* Tab Content */}
-      {activeTab === 'overview' ? (
+      {currentAsset === 'SPX' ? (
+        /* SPX Tabs */
+        activeTab === 'data' ? (
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <SpxAdminTab />
+          </div>
+        ) : (
+          <div className="max-w-7xl mx-auto px-4 py-6">
+            <SpxAdminTab />
+          </div>
+        )
+      ) : activeTab === 'overview' ? (
         <OverviewTab 
           data={data} 
           error={error} 
