@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { GovernanceCard } from './GovernanceCard';
 import { HealthCard } from './HealthCard';
 import { ReliabilityCard } from './ReliabilityCard';
@@ -25,8 +25,16 @@ import BackfillProgressPanel from './BackfillProgressPanel';
 import DriftTab from './DriftTab';
 import OpsTab from './OpsTab';
 import IntelTab from './IntelTab';
+import { AssetSelector } from '../AssetSelector';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
+
+// Asset product info for different terminals
+const ASSET_INFO = {
+  BTC: { name: 'BTC Terminal', status: 'FINAL', color: 'orange', available: true },
+  SPX: { name: 'SPX Terminal', status: 'BUILDING', color: 'blue', available: false },
+  COMBINED: { name: 'Combined', status: 'BUILDING', color: 'purple', available: false },
+};
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
