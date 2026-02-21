@@ -51,12 +51,23 @@ const TABS = [
 
 export function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const activeTab = searchParams.get('tab') || 'overview';
+  const currentAsset = searchParams.get('asset') || 'BTC';
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdate, setLastUpdate] = useState(null);
+  
+  // Handle asset selection
+  const handleAssetSelect = (assetId) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('asset', assetId);
+    setSearchParams(params, { replace: true });
+    // Force refresh data
+    setLoading(true);
+  };
   
   const setActiveTab = (tabId) => {
     const params = new URLSearchParams(searchParams);
