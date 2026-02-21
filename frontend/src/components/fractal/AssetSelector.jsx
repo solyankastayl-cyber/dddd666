@@ -42,7 +42,9 @@ const PRODUCTS = [
   },
 ];
 
-export function AssetSelector({ currentAsset = 'BTC', onSelect }) {
+export function AssetSelector({ currentAsset = 'BTC', onSelect, theme = 'light' }) {
+  const isDark = theme === 'dark';
+  
   return (
     <div className="flex items-center gap-2" data-testid="asset-selector">
       {PRODUCTS.map((product) => (
@@ -56,8 +58,12 @@ export function AssetSelector({ currentAsset = 'BTC', onSelect }) {
             ${currentAsset === product.id 
               ? `${product.color} text-white shadow-lg` 
               : product.available 
-                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                ? isDark 
+                  ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : isDark
+                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
+                  : 'bg-gray-50 text-gray-400 cursor-not-allowed opacity-50'
             }
           `}
           data-testid={`asset-btn-${product.id}`}
