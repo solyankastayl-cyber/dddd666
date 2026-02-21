@@ -25,6 +25,7 @@ import BackfillProgressPanel from './BackfillProgressPanel';
 import DriftTab from './DriftTab';
 import OpsTab from './OpsTab';
 import IntelTab from './IntelTab';
+import SpxAdminTab from './SpxAdminTab';
 import { AssetSelector } from '../AssetSelector';
 
 const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
@@ -32,11 +33,12 @@ const API_BASE = process.env.REACT_APP_BACKEND_URL || '';
 // Asset product info for different terminals
 const ASSET_INFO = {
   BTC: { name: 'BTC Terminal', status: 'FINAL', color: 'orange', available: true },
-  SPX: { name: 'SPX Terminal', status: 'BUILDING', color: 'blue', available: false },
+  SPX: { name: 'SPX Terminal', status: 'BUILDING', color: 'blue', available: true },
   COMBINED: { name: 'Combined', status: 'BUILDING', color: 'purple', available: false },
 };
 
-const TABS = [
+// Tabs for BTC
+const BTC_TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'shadow', label: 'Shadow Divergence' },
   { id: 'volatility', label: 'Volatility' },
@@ -48,6 +50,20 @@ const TABS = [
   { id: 'backfill', label: 'Backfill' },
   { id: 'ops', label: 'Ops' }
 ];
+
+// Tabs for SPX (Data Foundation)
+const SPX_TABS = [
+  { id: 'data', label: 'Data Foundation' },
+];
+
+// Get tabs based on asset
+function getTabsForAsset(asset) {
+  switch (asset) {
+    case 'SPX': return SPX_TABS;
+    case 'BTC':
+    default: return BTC_TABS;
+  }
+}
 
 export function AdminDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
