@@ -150,11 +150,11 @@ class BlockAIsolationTester:
             if has_fields:
                 # Verify governance structure
                 governance = data.get('governance', {})
-                if 'status' in governance and 'ready' in governance:
+                if 'mode' in governance and 'protectionMode' in governance:
                     self.log_test("Fractal Admin Overview", True, data)
                     return data
                 else:
-                    self.log_test("Fractal Admin Overview", False, data, "Missing governance status/ready fields")
+                    self.log_test("Fractal Admin Overview", False, data, "Missing governance mode/protectionMode fields")
             else:
                 self.log_test("Fractal Admin Overview", False, data, "Missing expected fields in admin overview response")
         else:
