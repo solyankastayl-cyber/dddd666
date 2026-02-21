@@ -11,8 +11,8 @@ import type { SpxCandle } from './spx.types.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// Default CSV path
-const DEFAULT_CSV_PATH = '/app/data/spx_1950_2025.csv';
+// Default CSV path - updated to merged file with 2026 data
+const DEFAULT_CSV_PATH = '/app/data/spx_1950_2026.csv';
 
 interface YahooCsvRow {
   date: string;
