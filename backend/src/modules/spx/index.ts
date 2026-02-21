@@ -45,5 +45,8 @@ export { pickSpxCohort, pickSpxCohortByTs } from './spx.cohorts.js';
 // Stooq client
 export { fetchStooqCsv, parseStooqDailyCsv } from './spx.stooq.client.js';
 
+// Yahoo CSV ingest
+export { ingestFromYahooCsv, replaceWithYahooCsv, parseYahooCsv } from './spx.yahoo.ingest.js';
+
 // Normalizer
 export { toCanonicalSpxCandles, filterByDateRange } from './spx.normalizer.js';
