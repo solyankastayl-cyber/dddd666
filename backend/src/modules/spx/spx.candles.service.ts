@@ -18,7 +18,11 @@ function toTs(dateStr: string): number {
 export async function querySpxCandles(q: SpxCandleQuery) {
   const limit = Math.max(1, Math.min(q.limit ?? 2000, 20000));
 
-  const filter: any = { symbol: 'SPX', source: 'STOOQ' };
+  const filter: any = { symbol: 'SPX' };
+  // Accept both STOOQ and MANUAL sources
+  if (q.source === 'stooq') {
+    filter.$or = [{ source: 'STOOQ' }, { source: 'MANUAL' }];
+  }
 
   if (q.from) filter.ts = { ...(filter.ts || {}), $gte: toTs(q.from) };
   if (q.to) filter.ts = { ...(filter.ts || {}), $lte: toTs(q.to) };
