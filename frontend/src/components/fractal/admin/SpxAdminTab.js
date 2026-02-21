@@ -226,6 +226,14 @@ export default function SpxAdminTab() {
         <h3 className="text-sm font-medium text-gray-700 mb-3">Data Actions</h3>
         <div className="flex flex-wrap gap-2">
           <button
+            onClick={() => handleIngestCsv(true)}
+            disabled={actionLoading}
+            className="px-4 py-2 text-sm font-medium bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+            title="Load real SPX data from yfinance CSV file"
+          >
+            {actionLoading ? 'Loading...' : 'Load from CSV (Real Data)'}
+          </button>
+          <button
             onClick={handleIngest}
             disabled={actionLoading}
             className="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
@@ -255,6 +263,7 @@ export default function SpxAdminTab() {
               {lastAction.type === 'ingest' && 'Ingest Result'}
               {lastAction.type === 'generate' && 'Generate Result'}
               {lastAction.type === 'indexes' && 'Index Result'}
+              {lastAction.type === 'csv' && 'CSV Import Result'}
             </div>
             <div className="text-xs mt-1">
               {lastAction.ok 
