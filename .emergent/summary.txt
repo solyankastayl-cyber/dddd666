@@ -1,0 +1,145 @@
+<analysis>**original_problem_statement:**
+Клонируй репозиторий, подними фронт, подними бэк, подними админку и доработай логику обновления по фронту для области **Fractal**. Работай **только** с модулем **Fractal**, игнорируя всё остальное.
+
+**PRODUCT REQUIREMENTS (summarized from user's detailed PRD):**
+The goal is to refactor the application into three isolated products:
+1.  **BTC Terminal (FINAL):** The existing 'Fractal' logic, now fully isolated. This is considered a frozen, stable product.
+2.  **SPX Terminal (FINAL):** A new, second product built as a 1:1 architectural clone of the BTC Terminal, but for the S&P 500 index.
+3.  **COMBINED Terminal (BTC×SPX Intelligence):** A third product that integrates the outputs of the BTC and SPX terminals to provide advanced cross-asset insights.
+
+The implementation follows a strict, phased roadmap:
+-   **BLOCK A:** Isolate BTC logic (API, DB, Code, UI). (COMPLETED)
+-   **BLOCK B:** Build the SPX Terminal.
+    -   B0-B4: SPX Data Foundation (ingestion, cohorts, validation). (COMPLETED)
+    -   B5: SPX Fractal Core Engine Clone. (IN PROGRESS)
+    -   B6: SPX Memory & Governance Layer. (UPCOMING)
+-   **BLOCK C:** Build the Combined Terminal. (FUTURE)
+
+**User's preferred language**:
+Russian. The next agent MUST respond in Russian.
+
+**what currently exists?**
+The repository () has been cloned and the application is running.
+-   **BLOCK A (BTC Final Isolation)** is complete. The original 'Fractal' logic is now a standalone BTC product with its own API namespace (), database collections (), and UI route ().
+-   **BLOCK B0-B4 (SPX Data Foundation)** is complete. Real historical data for the S&P 500 from **1950-01-03 to 2026-02-20** has been fetched using a Python script () and ingested into a new  MongoDB collection. The data is validated and segmented into cohorts (, , , , ). The admin panel now features an SPX tab for data management.
+
+**Last working item**:
+-   **Last item agent was working:** The agent was instructed to begin **BLOCK B5.2: SPX 30d Full Engine**. This involves cloning the core fractal logic from the BTC module to create a working 30-day analysis engine for SPX, including match scanning, primary match selection, replay path generation, and divergence calculation.
+-   **Status:** NOT STARTED
+-   **Agent Testing Done:** N
+-   **Which testing method agent to use?**: Backend testing agent. After implementation, use  to test the new  endpoint. Once the backend is verified, frontend testing can follow.
+-   **User Testing Done:** N
+
+**All Pending/In progress Issue list**:
+There are no pending bugs. All work is focused on new feature development as per the roadmap.
+
+**In progress Task List**:
+-   **Task 1: Implement BLOCK B5.2 - SPX 30d Full Engine (P0)**
+    -   **Where to resume:** Create the necessary backend services in a new  directory as per the user's last instructions. This includes:
+        1.   (for historical match scanning)
+        2.   (to build the trajectory after a match)
+        3.   (to pick the best match)
+        4.   (to calculate divergence)
+        5.  Update  to integrate these services and produce a complete response for the  focus pack.
+        6.  Create the  route.
+    -   **What will be achieved with this?** A functional 30-day fractal analysis engine for SPX, making the  endpoint live with real data and analysis. This is the first functional piece of the SPX Terminal.
+    -   **Status:** NOT STARTED
+    -   **Should Test backend/backend/both after fix?**: Backend
+    -   **Blocked on something**: No.
+
+**Upcoming and Future Tasks**
+-   **Upcoming Tasks (P0): Complete BLOCK B5**
+    -   **B5.3:** Extend the fractal engine to all horizons (7d, 14d, 90d, 180d, 365d).
+    -   **B5.4:** Clone and integrate the Phase Engine and Consensus Engine for SPX.
+    -   **B5.8:** Create the SPX Terminal UI tab in the main application header to display the fractal analysis.
+-   **Upcoming Tasks (P1):**
+    -   **BLOCK B6:** Implement the SPX Memory Layer (, , attribution, governance).
+    -   **BLOCK B4 (Intel Stack):** Implement the SPX Intel Stack (Consensus Timeline, Drift Intelligence, etc.).
+-   **Future Tasks (P2):**
+    -   **BLOCK C:** Implement the **COMBINED Terminal**, which will integrate the final outputs from the BTC and SPX terminals.
+
+**Completed work in this session**
+-   **Recently completed:**
+    -   **BLOCK A - BTC Final Isolation (DONE):** Isolated the existing fractal logic into a standalone BTC product (,  collections,  UI route).
+    -   **BLOCK B0-B4 - SPX Data Foundation (DONE):**
+        -   Created Python scripts to fetch real SPX historical data (1950-2026) using .
+        -   Created backend services () to ingest, validate, and manage the SPX data in a new  MongoDB collection.
+        -   Implemented cohort segmentation (, , , , ).
+        -   Built a new SPX tab in the admin dashboard for data management ().
+
+**Earlier issues found/mentioned but not fixed**
+-   None.
+
+**Known issue recurrence from previous fork**
+-   N/A
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+-   **Backend:** Node.js, TypeScript, Fastify, Mongoose, MongoDB.
+-   **Frontend:** React, TypeScript, Vite, Tailwind CSS.
+-   **Architecture:** A multi-product system (BTC, SPX, Combined) with strict code and data isolation.
+-   **Data Sourcing:** An external Python script () is used for one-off fetching of historical market data.
+
+**key DB schema**
+-   : 
+-   : Existing fractal-related collections, now isolated with a  prefix.
+
+**changes in tech stack**
+-   None.
+
+**All files of reference**
+-   : Contains all files for the completed SPX Data Foundation.
+-   : The UI for SPX data management.
+-   : The canonical source for real SPX data.
+-   : This directory will house the new SPX Fractal Core logic to be created next.
+
+**Areas that need refactoring**:
+-   None at this time. The data fetching via Python scripts is a one-off task as per the user's direction and does not require refactoring into the main application.
+
+**key api endpoints**
+-   **SPX Admin:**
+    -   : Loads data from the CSV file into MongoDB.
+    -   : Retrieves statistics about the SPX data.
+-   **SPX Core (To be created):**
+    -   : The primary endpoint for the next task.
+
+**Critical Info for New Agent**
+-   **Follow the user's roadmap strictly.** The user has provided a detailed, non-negotiable plan. Do not deviate.
+-   You are starting **BLOCK B5: SPX Fractal Core Clone**. The immediate goal is to implement a **full 30-day fractal engine** by cloning the logic from the BTC module.
+-   Your first task is to create the backend services for , , , and  inside a new  module, and expose them via the  endpoint.
+-   The data foundation is complete and uses real data. Do not perform any more data fetching or ingestion unless explicitly asked.
+-   **Respond in Russian.**
+
+**documents and test reports created in this job**
+-   
+-   
+-   
+
+**Last 10 User Messages and any pending HUMAN messages**
+1.  **User (Summary):** Agrees to start чистый B5 clone (a clean B5 clone).
+2.  **Agent (Summary):** Proposes starting B5 with a minimal 30d focus-pack and asks whether to expand to all horizons next or fully complete the 30d engine first. Recommends completing the 30d engine.
+3.  **User (Summary):** Agrees to build the 30d full engine.
+4.  **Agent (Summary):** Provides the detailed technical plan for the full 30d engine (B5.2.1 to B5.2.5), covering scanning, replay, selection, and divergence. Asks the user to confirm to start.
+5.  **User (Summary):** Го B5.2! (Go B5.2!) - Confirms the plan and gives the green light to start implementation.
+
+**Project Health Check:**
+-   **Working:** BTC Terminal, SPX Data Foundation & Admin UI.
+-   **Broken:** None.
+-   **Mocked:** A mock data generator for SPX exists but is obsolete now that real data is loaded.
+
+**3rd Party Integrations**
+-    (Python library): Used via one-off scripts for data downloading. Not a runtime dependency of the application.
+
+**Testing status**
+-   **Testing agent used after significant changes:** YES
+-   **Troubleshoot agent used after agent stuck in loop:** NO
+-   **Test files created:** None
+-   **Known regressions:** None
+
+**Credentials to test flow:**
+-   None required.
+
+**What agent forgot to execute**
+-   Nothing. The agent has followed the user's instructions precisely and is ready for the next step.</analysis>

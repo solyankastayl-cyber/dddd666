@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, Any, Optional
 
 class IntelTimelineAlertsTester:
-    def __init__(self, base_url="https://fractal-dev-2.preview.emergentagent.com"):
+    def __init__(self, base_url="https://spx-core-engine.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0

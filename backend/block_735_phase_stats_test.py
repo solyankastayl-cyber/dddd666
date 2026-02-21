@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Dict, List, Any
 
 class PhaseHoverIntelligenceTest:
-    def __init__(self, base_url_external="https://consensus-timeline.preview.emergentagent.com", 
+    def __init__(self, base_url_external="https://spx-core-engine.preview.emergentagent.com", 
                  base_url_local="http://localhost:8001"):
         # Agent notes mention using localhost:8001 due to external ingress issues
         self.base_url_external = base_url_external

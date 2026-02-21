@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 class Block345Tester:
-    def __init__(self, base_url="https://consensus-timeline.preview.emergentagent.com"):
+    def __init__(self, base_url="https://spx-core-engine.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
