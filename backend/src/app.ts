@@ -113,6 +113,12 @@ export function buildApp(): FastifyInstance {
         await registerSpxRoutes(fastify);
         console.log('[BOOT] ✅ SPX Terminal registered at /api/spx/v2.1/*');
         
+        // Register SPX Core (BLOCK B5 - Fractal Core)
+        console.log('[BOOT] Registering SPX Core (Fractal Engine)...');
+        const { registerSpxCoreRoutes } = await import('./modules/spx-core/index.js');
+        await registerSpxCoreRoutes(fastify);
+        console.log('[BOOT] ✅ SPX Core registered at /api/spx/v2.1/focus-pack');
+        
         // Register Combined Terminal (BLOCK C - Building)
         console.log('[BOOT] Registering Combined Terminal (Building)...');
         const { registerCombinedRoutes } = await import('./modules/combined/index.js');
