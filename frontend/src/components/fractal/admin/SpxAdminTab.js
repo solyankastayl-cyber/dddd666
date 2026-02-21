@@ -277,8 +277,9 @@ export default function SpxAdminTab() {
 
       {/* Info */}
       <div className="text-xs text-gray-400 space-y-1">
-        <p>• SPX candles fetched from Stooq (free) or Yahoo Finance (fallback)</p>
-        <p>• Mock generator creates realistic synthetic data for development</p>
+        <p>• <strong>Load from CSV</strong>: Imports real SPX data from yfinance CSV file (/app/data/spx_1950_2025.csv)</p>
+        <p>• <strong>Ingest from Stooq/Yahoo</strong>: Fetches data via API (may be rate-limited)</p>
+        <p>• <strong>Generate Mock</strong>: Creates synthetic data for development</p>
         <p>• Cohorts: V1950 (1950-1989), V1990 (1990-2007), V2008 (2008-2019), V2020 (2020-2025), LIVE (2026+)</p>
       </div>
     </div>
