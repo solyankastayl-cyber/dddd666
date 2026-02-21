@@ -28,6 +28,7 @@ import { runSpxBackfill, getBackfillProgress, resetBackfillProgress, getCohortCo
 import { validateSpxData, auditSpxGaps, getSpxStats } from './spx.validation.service.js';
 import { querySpxCandles, getLatestSpxCandle } from './spx.candles.service.js';
 import { ensureSpxIndexes, SpxCandleModel } from './spx.mongo.js';
+import { ingestFromYahooCsv, replaceWithYahooCsv } from './spx.yahoo.ingest.js';
 import { generateMockSpxCandles, generateFullSpxHistory } from './spx.mock.generator.js';
 import type { SpxCohort } from './spx.types.js';
 
