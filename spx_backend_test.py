@@ -199,8 +199,8 @@ class SPXDataFoundationTester:
                         else:
                             self.log_test("Market Data Candles API", False, data, f"Missing candle fields. Found: {list(candle.keys())}")
                     else:
-                        self.log_test("Market Data Candles API", True, data, "No candles returned (may be empty dataset)")
-                        return data
+                        self.log_test("Market Data Candles API", False, data, "No candles returned when expected")
+                        return None
                 else:
                     self.log_test("Market Data Candles API", False, data, f"Count mismatch: candles={len(candles)}, count={count}")
             else:
