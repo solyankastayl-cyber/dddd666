@@ -354,6 +354,26 @@ export async function registerSpxRoutes(fastify: FastifyInstance): Promise<void>
     }
   });
 
+  /**
+   * POST /api/fractal/v2.1/admin/spx/ingest-csv
+   * Ingest SPX data from Yahoo Finance CSV file
+   */
+  fastify.post('/api/fractal/v2.1/admin/spx/ingest-csv', async (req) => {
+    const body = (req.body ?? {}) as any;
+    const csvPath = body.csvPath as string || '/app/data/spx_1950_2025.csv';
+    const replace = body.replace as boolean || false;
+
+    try {
+      if (replace) {
+        return await replaceWithYahooCsv(csvPath);
+      } else {
+        return await ingestFromYahooCsv(csvPath);
+      }
+    } catch (e: any) {
+      return { ok: false, error: e.message };
+    }
+  });
+
   fastify.log.info(`[SPX] Terminal routes registered at ${prefix}/* (DATA FOUNDATION READY)`);
   fastify.log.info(`[SPX] Admin routes registered at /api/fractal/v2.1/admin/spx/*`);
 }
