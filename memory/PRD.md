@@ -1,7 +1,7 @@
 # Fractal V2.1 — PRD (Product Requirements Document)
 
 **Last Updated:** 2026-02-21  
-**Status:** BLOCK A Complete + BLOCK B1-B4 Complete
+**Status:** BLOCK A Complete + BLOCK B1-B4 Complete (REAL DATA)
 
 ---
 
@@ -21,16 +21,11 @@
 
 ### 3-Product Architecture
 
-| Product | Status | API Namespace | UI Route | Data |
-|---------|--------|---------------|----------|------|
+| Product | Status | API Namespace | UI Route | Data Status |
+|---------|--------|---------------|----------|-------------|
 | BTC Terminal | FINAL | `/api/btc/v2.1/*` | `/btc` | Production |
-| SPX Terminal | BUILDING | `/api/spx/v2.1/*` | `/spx` | Mock (19,828 candles) |
+| SPX Terminal | DATA_READY | `/api/spx/v2.1/*` | `/spx` | **Real (19,121 candles)** |
 | Combined Terminal | BUILDING | `/api/combined/v2.1/*` | `/combined` | Pending |
-
-### Module Isolation
-- `modules/btc/**` → imports only `core/**`
-- `modules/spx/**` → imports only `core/**`
-- `modules/combined/**` → can read from btc/spx (read-only)
 
 ---
 
@@ -38,60 +33,50 @@
 
 ### Session 2026-02-21: BLOCK A — BTC Final Isolation ✅
 
-**Backend:**
-- BTC, SPX, Combined route registration in `app.fractal.ts`
 - BTC routes at `/api/btc/v2.1/*`
-- SPX routes at `/api/spx/v2.1/*`
+- SPX routes at `/api/spx/v2.1/*`  
 - Combined routes at `/api/combined/v2.1/*`
-
-**Frontend:**
-- AssetSelector component with 3 product buttons
-- Dynamic tabs based on selected asset
-- BTC = active, SPX = available, COMBINED = coming soon
+- AssetSelector component in AdminDashboard
 
 ### Session 2026-02-21: BLOCK B1-B4 — SPX Data Foundation ✅
 
 **Backend SPX Module (`/backend/src/modules/spx/`):**
-- `spx.constants.ts` - Configuration
-- `spx.types.ts` - Type definitions
-- `spx.mongo.ts` - MongoDB models (spx_candles, spx_backfill_progress, spx_ingestion_log)
-- `spx.cohorts.ts` - Cohort segmentation (V1950/V1990/V2008/V2020/LIVE)
-- `spx.stooq.client.ts` - Stooq CSV fetcher/parser
-- `spx.yahoo.client.ts` - Yahoo Finance fallback
-- `spx.mock.generator.ts` - Mock data generator
-- `spx.normalizer.ts` - Data normalization
-- `spx.ingest.service.ts` - Idempotent ingestion
-- `spx.backfill.service.ts` - Resume-safe backfill
-- `spx.validation.service.ts` - Data integrity checks
-- `spx.candles.service.ts` - Query service
-- `spx.routes.ts` - Full API routes
+- Complete SPX data pipeline (types, models, services, routes)
+- Multiple data sources: Stooq, Yahoo Finance, CSV, Mock generator
+- Cohort segmentation: V1950/V1990/V2008/V2020/LIVE
+- Validation + Gap audit services
+- Resume-safe backfill service
 
-**SPX API Endpoints:**
-- `GET /api/spx/v2.1/info` - Product info
-- `GET /api/spx/v2.1/stats` - Data statistics
-- `GET /api/spx/v2.1/status` - Build status
-- `GET /api/market-data/candles?symbol=SPX` - Query candles
-- `POST /api/fractal/v2.1/admin/spx/ingest` - Ingest from Stooq/Yahoo
-- `POST /api/fractal/v2.1/admin/spx/backfill` - Run backfill
-- `POST /api/fractal/v2.1/admin/spx/generate-mock` - Generate mock data
-- `GET /api/fractal/v2.1/admin/spx/validate` - Data validation
-- `GET /api/fractal/v2.1/admin/spx/gaps` - Gap audit
-- `GET /api/fractal/v2.1/admin/spx/cohorts` - Cohort breakdown
+**Data Ingestion Methods:**
+1. **yfinance CSV** (Recommended): `python scripts/download_spx.py` → `/api/fractal/v2.1/admin/spx/ingest-csv`
+2. **Stooq/Yahoo API**: `/api/fractal/v2.1/admin/spx/ingest` (may be rate-limited)
+3. **Mock Generator**: `/api/fractal/v2.1/admin/spx/generate-mock`
 
-**Frontend:**
-- `SpxAdminTab.js` - SPX Data Foundation UI
-- Dynamic tab switching based on asset
-- Cohort distribution visualization
-- Data actions (Ingest, Generate Mock, Ensure Indexes)
+---
 
-**SPX Data Status:**
-| Cohort | Records | Period |
-|--------|---------|--------|
-| V1950 | 10,435 | 1950-1989 |
-| V1990 | 4,696 | 1990-2007 |
-| V2008 | 3,131 | 2008-2019 |
-| V2020 | 1,566 | 2020-2025 |
-| **Total** | **19,828** | 1950-2025 |
+## SPX Data Status (REAL DATA)
+
+**Source:** Yahoo Finance (yfinance)  
+**Total Candles:** 19,121  
+**Date Range:** 1950-01-03 → 2025-12-31  
+
+| Cohort | Records | Period | Description |
+|--------|---------|--------|-------------|
+| V1950 | 10,054 | 1950-1989 | Post-war era |
+| V1990 | 4,538 | 1990-2007 | Dot-com + Pre-crisis |
+| V2008 | 3,021 | 2008-2019 | GFC + Recovery |
+| V2020 | 1,508 | 2020-2025 | COVID + Post-pandemic |
+| **Total** | **19,121** | 75 years | Full history |
+
+**Validation:**
+- ✅ No NaN values
+- ✅ No zero prices
+- ✅ No invalid OHLC
+- ⚠️ 1 outlier: Black Monday (1987-10-19, -20.5% drop) - valid extreme event
+
+**Notable Gaps:**
+- 2001-09-10 → 2001-09-17 (7 days): Post-9/11 market closure
+- Holiday weekends: Various 4-5 day gaps
 
 ---
 
@@ -104,11 +89,10 @@ Fractal V2.1 — 3-Product Architecture
 │ BTC Terminal        FINAL               │
 │   API: /api/btc/v2.1/*                  │
 │   Status: Production Ready               │
-│   Data: 4,383+ candles (BTC)            │
 ├──────────────────────────────────────────┤
 │ SPX Terminal        DATA_READY          │
 │   API: /api/spx/v2.1/*                  │
-│   Data: 19,828 candles (1950-2025)      │
+│   Data: 19,121 REAL candles (1950-2025) │
 │   Next: BLOCK B5 Fractal Core Clone     │
 ├──────────────────────────────────────────┤
 │ Combined Terminal   BUILDING            │
@@ -116,9 +100,8 @@ Fractal V2.1 — 3-Product Architecture
 │   Depends on: SPX Terminal Complete     │
 └──────────────────────────────────────────┘
 
-AdminDashboard: Asset Selector integrated
-SPX Admin: Data Foundation tab active
-Scheduler: ENABLED (00:10 UTC daily)
+Data Source: Yahoo Finance (yfinance)
+CSV File: /app/data/spx_1950_2025.csv
 ```
 
 ---
@@ -127,30 +110,42 @@ Scheduler: ENABLED (00:10 UTC daily)
 
 ### P0 (Critical) ✅ DONE
 - [x] BLOCK A: BTC Final Isolation
-- [x] BLOCK B1: SPX Data Adapter (Stooq/Yahoo)
-- [x] BLOCK B2: SPX Backfill Service (Resume-safe)
-- [x] BLOCK B3: SPX Index Hardening + Validation
-- [x] BLOCK B4: SPX Ingestion Service + Mock Generator
+- [x] BLOCK B1-B4: SPX Data Foundation
+- [x] Real SPX data via yfinance (19,121 candles)
 
 ### P1 (High) - Next
 - [ ] BLOCK B5: SPX Fractal Core Clone
   - Horizons 7d/14d/30d/90d/180d/365d
   - Primary match selector
-  - Replay/Synthetic builder
   - Divergence engine
-  - Phase engine
-  - Volatility regime
-  - Consensus74 + structuralLock
+  - Phase engine + consensus
 
 ### P2 (Medium)
-- [ ] BLOCK B6: SPX Memory Layer (snapshots/outcomes)
-- [ ] BLOCK B7: SPX Intel Stack (timeline/alerts)
-- [ ] BLOCK C1-C3: Combined Terminal
+- [ ] BLOCK B6: SPX Memory Layer
+- [ ] BLOCK B7: SPX Intel Stack
+- [ ] BLOCK C: Combined Terminal
 
-### P3 (Future)
-- [ ] Real-time WebSocket for SPX
-- [ ] Real SPX data integration (when APIs available)
-- [ ] Cross-Asset Learning Layer
+---
+
+## API Endpoints Summary
+
+### SPX Terminal APIs
+```
+GET  /api/spx/v2.1/info              # Product info
+GET  /api/spx/v2.1/stats             # Data statistics
+GET  /api/spx/v2.1/status            # Build status
+GET  /api/spx/v2.1/terminal          # Terminal data
+GET  /api/market-data/candles        # Query candles
+
+POST /api/fractal/v2.1/admin/spx/ingest       # Ingest from Stooq/Yahoo
+POST /api/fractal/v2.1/admin/spx/ingest-csv   # Ingest from CSV file
+POST /api/fractal/v2.1/admin/spx/backfill     # Run backfill
+POST /api/fractal/v2.1/admin/spx/generate-mock # Generate mock data
+GET  /api/fractal/v2.1/admin/spx/validate     # Data validation
+GET  /api/fractal/v2.1/admin/spx/gaps         # Gap audit
+GET  /api/fractal/v2.1/admin/spx/cohorts      # Cohort breakdown
+POST /api/fractal/v2.1/admin/spx/indexes      # Ensure indexes
+```
 
 ---
 
@@ -161,18 +156,6 @@ Scheduler: ENABLED (00:10 UTC daily)
    - Create `/api/spx/v2.1/terminal` full endpoint
    - Build SPX Terminal UI
 
-2. **BLOCK B6**: SPX Memory Layer
-   - spx_snapshots collection
-   - Forward truth resolver
-   - Attribution service
+2. **BLOCK B6**: SPX Memory Layer (snapshots/outcomes)
 
 3. After SPX complete → BLOCK C for Combined Terminal
-
----
-
-## Notes
-
-- SPX data is currently MOCK generated due to Stooq/Yahoo API rate limits
-- Mock data follows realistic historical patterns (based on actual SPX anchors)
-- Real data can be ingested via admin when APIs are available
-- All SPX code is isolated from BTC - no cross-contamination
