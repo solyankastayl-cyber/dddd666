@@ -14,6 +14,7 @@ import { connectMongo, disconnectMongo } from './db/mongoose.js';
 import { registerFractalModule } from './modules/fractal/index.js';
 import { registerBtcRoutes } from './modules/btc/index.js';
 import { registerSpxRoutes } from './modules/spx/index.js';
+import { registerSpxCoreRoutes } from './modules/spx-core/index.js';
 import { registerCombinedRoutes } from './modules/combined/index.js';
 import { adminAuthRoutes } from './core/admin/admin.auth.routes.js';
 
@@ -63,6 +64,11 @@ async function main() {
   console.log('[Fractal] Registering SPX Terminal (Building)...');
   await registerSpxRoutes(app);
   console.log('[Fractal] ✅ SPX Terminal registered at /api/spx/v2.1/*');
+  
+  // BLOCK B5: Register SPX Core (Fractal Engine)
+  console.log('[Fractal] Registering SPX Core (Fractal Engine)...');
+  await registerSpxCoreRoutes(app);
+  console.log('[Fractal] ✅ SPX Core registered at /api/spx/v2.1/focus-pack');
   
   // BLOCK C: Register Combined Terminal (Building)
   console.log('[Fractal] Registering Combined Terminal (Building)...');
