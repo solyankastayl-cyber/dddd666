@@ -1,13 +1,13 @@
 # Fractal V2.1 — PRD (Product Requirements Document)
 
-**Last Updated:** 2026-02-20  
-**Status:** BLOCK 82-85 Complete, Scheduler ENABLED
+**Last Updated:** 2026-02-21  
+**Status:** BLOCK A Complete, 3-Product Architecture Implemented
 
 ---
 
 ## Original Problem Statement
 
-Клонировать репозиторий https://github.com/solyankastayl-cyber/ddd5555, поднять фронт, бэк, админку и работать только с областью Fractal. Реализовать BLOCK 82-85.
+Клонировать репозиторий https://github.com/solyankastayl-cyber/dddddd, поднять фронт, бэк, админку и работать только с областью Fractal. Реализовать BLOCK A - BTC Final isolation и логику обновления по фронту с Asset Selector.
 
 ---
 
@@ -16,65 +16,52 @@
 ### Tech Stack
 - **Backend:** Node.js + TypeScript + Fastify + MongoDB (Mongoose)
 - **Frontend:** React + TailwindCSS
-- **Database:** MongoDB (fractal_db)
+- **Database:** MongoDB (fractal_dev)
+- **Proxy:** Python FastAPI (uvicorn) → TypeScript backend on port 8002
 
-### Core Modules
-- `/backend/src/modules/fractal/` — Main Fractal module
-- `/frontend/src/components/fractal/admin/` — Admin Dashboard
+### 3-Product Architecture (BLOCK A/B/C)
+
+| Product | Status | API Namespace | UI Route |
+|---------|--------|---------------|----------|
+| BTC Terminal | FINAL | `/api/btc/v2.1/*` | `/btc` |
+| SPX Terminal | BUILDING | `/api/spx/v2.1/*` | `/spx` |
+| Combined Terminal | BUILDING | `/api/combined/v2.1/*` | `/combined` |
+
+### Module Isolation Rules
+- `modules/btc/**` → imports only `core/**`
+- `modules/spx/**` → imports only `core/**`
+- `modules/combined/**` → can read from btc/spx (read-only)
 
 ---
 
 ## What's Been Implemented
 
-### BLOCK 82 — Intel Timeline (Phase Strength + Dominance History)
-**Date:** 2026-02-20
+### Session 2026-02-21: BLOCK A — BTC Final Isolation
 
-- MongoDB collection `intel_timeline_daily` with phase/dominance snapshots
-- API: timeline, latest, counts, snapshot, backfill
-- Frontend: Phase Strength graph, Dominance History bar, KPI Summary
+**Backend Changes:**
+- Added BTC, SPX, Combined route registration to `app.fractal.ts`
+- BTC routes proxy to Fractal core with `symbol=BTC` forced
+- SPX/Combined return status placeholders (BUILDING)
 
-### BLOCK 83 — Intel Alerts Engine (Event-based Alerts)
-**Date:** 2026-02-20
+**Frontend Changes:**
+- Created `AssetSelector.jsx` component with 3 product buttons
+- Integrated AssetSelector into AdminDashboard header
+- Header now shows dynamic product name with FINAL/BUILDING badge
+- BTC button active (orange), SPX/COMBINED disabled with "(soon)"
+- Dashboard fetches asset-specific API based on selection
 
-- Event detection: LOCK_ENTER, LOCK_EXIT, DOMINANCE_SHIFT, PHASE_DOWNGRADE
-- Telegram integration with rate limiting (3/24h, CRITICAL bypass)
-- Frontend: Intelligence Event Alerts table
+**API Endpoints Working:**
+- `GET /api/btc/v2.1/info` → BTC Terminal info (FINAL)
+- `GET /api/spx/v2.1/status` → SPX build progress
+- `GET /api/combined/v2.1/info` → Combined Terminal config
+- All Fractal admin APIs under `/api/fractal/v2.1/*`
 
-### BLOCK 84 — Visual Event Markers
-**Date:** 2026-02-20
-
-- Event markers (🔒🔓▲▼) on Phase Strength Timeline
-- Event markers (▲●) on Dominance History bar
-- Hover tooltips for event details
-
-### BLOCK 85 — Model Health Composite Score
-**Date:** 2026-02-20
-
-- Composite score (0-100) from 5 components:
-  - Performance (LIVE vs Bootstrap): 30%
-  - Drift Penalty: 20%
-  - Phase Score: 20%
-  - Divergence Score: 15%
-  - Stability Score: 15%
-- Bands: STRONG (≥80), STABLE (≥65), MODERATE (≥50), WEAK (<50)
-- API: `/api/fractal/v2.1/admin/model-health`
-- Frontend: Model Health Badge in Intel Tab header
-
-### Daily Run Pipeline
-**Steps:**
-1. SNAPSHOT_WRITE
-2. OUTCOME_RESOLVE
-3. EQUITY_REBUILD
-4. ALERTS
-5. AUDIT_LOG
-6. MEMORY_SNAPSHOTS
-7. INTEL_TIMELINE_WRITE (BLOCK 82)
-8. INTEL_EVENT_ALERTS (BLOCK 83)
-
-### Scheduler
-- **Status:** ENABLED
-- **Schedule:** 00:10 UTC daily
-- **Next Run:** 2026-02-21 00:10 UTC
+### Previous Implementation (BLOCK 82-85)
+- Intel Timeline (Phase Strength + Dominance History)
+- Intel Alerts Engine (Event-based Alerts)
+- Visual Event Markers
+- Model Health Composite Score
+- Daily Run Pipeline + Scheduler
 
 ---
 
@@ -82,62 +69,67 @@
 
 | Source | Records | Description |
 |--------|---------|-------------|
-| LIVE | 1 | Today's snapshot |
+| LIVE | 1+ | Today's snapshots |
 | V2020 | 2192 | 2020-2025 backfill |
 | V2014 | 2191 | 2014-2019 backfill |
-
-### Current Model Health
-- **Score:** 77%
-- **Band:** STABLE
-- **Components:** Perf=96, Drift=80, Phase=50, Div=50, Stability=100
 
 ---
 
 ## Prioritized Backlog
 
 ### P0 (Critical) ✅
-- [x] BLOCK 82: Intel Timeline
-- [x] BLOCK 83: Intel Alerts Engine
-- [x] BLOCK 84: Visual Event Markers
-- [x] BLOCK 85: Model Health Composite Score
-- [x] Scheduler enabled
+- [x] BLOCK A1: BTC API namespace `/api/btc/v2.1/*`
+- [x] BLOCK A2: Storage isolation config (btc_* collections)
+- [x] BLOCK A3: Code isolation (import boundaries)
+- [x] BLOCK A4: UI asset selector in AdminDashboard
 
-### P1 (High)
-- [ ] Telegram alerts testing with real credentials
-- [ ] Accumulate LIVE samples (≥15 for alerts, ≥30 for governance)
+### P1 (High) - Next
+- [ ] BLOCK B1: SPX data adapter (fetch SPX index candles)
+- [ ] BLOCK B2: SPX backfill cohorts (V2014/V2020 equivalent)
+- [ ] BLOCK B3: SPX Terminal full pipeline (horizons, consensus, etc.)
+- [ ] BLOCK B4: SPX admin dashboard integration
 
 ### P2 (Medium)
-- [ ] BLOCK 86: Multi-Asset Expansion (ETH)
-- [ ] BLOCK 87: Adaptive Weight Learning v2
-- [ ] Historical query for V2014/V2020 (custom date range)
+- [ ] BLOCK C1: Combined Terminal API (aggregates BTC + SPX)
+- [ ] BLOCK C2: Combined Decision Kernel
+- [ ] BLOCK C3: Integration layers L1-L4
+- [ ] BLOCK C4: SPX influence toggle (ON/OFF)
 
 ### P3 (Future)
-- [ ] WebSocket real-time updates
-- [ ] Phase Strength/Dominance Timeline export
-- [ ] Dashboard customization
+- [ ] Real-time WebSocket updates
+- [ ] Telegram alerts with live credentials
+- [ ] Governance APPLY when LIVE samples ≥30
 
 ---
 
 ## Next Tasks
 
-1. **Monitor LIVE accumulation** — Wait 7-15 days for alerts activation
-2. **Test Telegram** — Verify alerts reach @F_FOMO_bot when samples ≥15
-3. **Governance unlock** — After 30 LIVE days, APPLY becomes available
+1. **BLOCK B1**: Implement SPX data adapter to fetch S&P 500 daily candles
+2. **BLOCK B2**: Create SPX backfill service for historical data (2014-2025)
+3. **BLOCK B3**: Apply full Fractal pipeline to SPX (horizons, phases, consensus)
+4. After SPX complete → BLOCK C for Combined Terminal
 
 ---
 
 ## System Status Summary
 
 ```
-Fractal V2.1 — Institutional Panel
+Fractal V2.1 — 3-Product Architecture
 
-┌─────────────────────────────────────┐
-│ Model Health: 77% STABLE            │
-│ Phase: NEUTRAL (C) → Trend: FLAT    │
-│ Dominance: STRUCTURE (100%)         │
-│ Lock: OFF | Conflict: LOW           │
-│ Drift: WATCH | Confidence: LOW      │
-│ LIVE Samples: 1 (need ≥15 for alerts)│
-│ Scheduler: ENABLED (00:10 UTC)      │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│ BTC Terminal        FINAL               │
+│   API: /api/btc/v2.1/*                  │
+│   Status: Production Ready               │
+├──────────────────────────────────────────┤
+│ SPX Terminal        BUILDING            │
+│   API: /api/spx/v2.1/*                  │
+│   Next: Data Adapter + Backfill         │
+├──────────────────────────────────────────┤
+│ Combined Terminal   BUILDING            │
+│   API: /api/combined/v2.1/*             │
+│   Depends on: SPX Terminal              │
+└──────────────────────────────────────────┘
+
+AdminDashboard: AssetSelector integrated
+Scheduler: ENABLED (00:10 UTC daily)
 ```
