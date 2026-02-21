@@ -27,19 +27,34 @@ interface YahooCsvRow {
 /**
  * Parse Yahoo Finance CSV format
  * 
- * Format:
- * Price,Adj Close,Close,High,Low,Open,Volume
- * Ticker,^GSPC,^GSPC,^GSPC,^GSPC,^GSPC,^GSPC
- * Date,...
+ * Supports both formats:
+ * 1. Raw yfinance: Price,Adj Close,Close,High,Low,Open,Volume
+ * 2. Normalized: date,open,high,low,close,adj_close,volume
  */
 export function parseYahooCsv(csvText: string): YahooCsvRow[] {
   const lines = csvText.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
   
-  // Find the data start (skip multi-level header)
-  let dataStartIdx = 0;
-  for (let i = 0; i < lines.length; i++) {
+  // Parse header to determine format
+  const header = lines[0].toLowerCase().split(',').map(h => h.trim());
+  
+  // Find column indices
+  const idx: Record<string, number> = {};
+  for (let i = 0; i < header.length; i++) {
+    const h = header[i];
+    if (h.includes('date') || h === 'price') idx.date = i;
+    else if (h === 'open') idx.open = i;
+    else if (h === 'high') idx.high = i;
+    else if (h === 'low') idx.low = i;
+    else if (h === 'close' && !h.includes('adj')) idx.close = i;
+    else if (h.includes('adj')) idx.adjClose = i;
+    else if (h.includes('volume')) idx.volume = i;
+  }
+  
+  // Find data start (skip any meta headers like "Ticker,^GSPC...")
+  let dataStartIdx = 1;
+  for (let i = 1; i < Math.min(5, lines.length); i++) {
     const firstCol = lines[i].split(',')[0]?.trim();
-    // Data rows start with a date like "1950-01-03"
     if (/^\d{4}-\d{2}-\d{2}/.test(firstCol)) {
       dataStartIdx = i;
       break;
@@ -53,33 +68,29 @@ export function parseYahooCsv(csvText: string): YahooCsvRow[] {
     if (!line) continue;
     
     const parts = line.split(',');
-    const date = parts[0]?.trim();
+    const date = parts[idx.date ?? 0]?.trim();
     
     // Skip invalid dates
     if (!date || !/^\d{4}-\d{2}-\d{2}/.test(date)) continue;
     
-    // Yahoo format: Date, Adj Close, Close, High, Low, Open, Volume
-    const adjClose = parseFloat(parts[1]);
-    const close = parseFloat(parts[2]);
-    const high = parseFloat(parts[3]);
-    const low = parseFloat(parts[4]);
-    const open = parseFloat(parts[5]);
-    const volume = parseInt(parts[6]) || 0;
+    const open = parseFloat(parts[idx.open ?? 1]);
+    const high = parseFloat(parts[idx.high ?? 2]);
+    const low = parseFloat(parts[idx.low ?? 3]);
+    const close = parseFloat(parts[idx.close ?? 4]);
+    const adjClose = parseFloat(parts[idx.adjClose ?? 5]);
+    const volume = parseInt(parts[idx.volume ?? 6]) || 0;
     
     // Validate OHLC
     if (!Number.isFinite(open) || !Number.isFinite(high) || 
         !Number.isFinite(low) || !Number.isFinite(close)) {
-      console.warn(`[Yahoo CSV] Invalid OHLC at ${date}, skipping`);
       continue;
     }
     
     if (open <= 0 || high <= 0 || low <= 0 || close <= 0) {
-      console.warn(`[Yahoo CSV] Non-positive OHLC at ${date}, skipping`);
       continue;
     }
     
     if (low > high) {
-      console.warn(`[Yahoo CSV] Low > High at ${date}, skipping`);
       continue;
     }
     
@@ -89,7 +100,7 @@ export function parseYahooCsv(csvText: string): YahooCsvRow[] {
       high,
       low,
       close,
-      adjClose,
+      adjClose: Number.isFinite(adjClose) ? adjClose : close,
       volume,
     });
   }
