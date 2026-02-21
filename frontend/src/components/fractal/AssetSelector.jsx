@@ -28,7 +28,7 @@ const PRODUCTS = [
     route: '/spx',
     adminRoute: '/admin/spx',
     color: 'bg-blue-500',
-    available: false,
+    available: true, // Now available with Data Foundation
   },
   {
     id: 'COMBINED',
