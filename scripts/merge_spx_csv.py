@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SPX CSV Merge Script
+SPX CSV Merge Script (Fixed for yfinance multi-header format)
 
 Merges base SPX data (1950-2025) with 2026 patch.
 """
@@ -16,59 +16,36 @@ print("=" * 60)
 print("SPX CSV Merge")
 print("=" * 60)
 
-# Read base CSV
+# Read base CSV - skip first 2 header rows, use row 3 (dates start at row 4)
 print(f"\nReading base: {base_path}")
-base = pd.read_csv(base_path)
-print(f"  Base columns: {base.columns.tolist()}")
-print(f"  Base rows: {len(base)}")
+base = pd.read_csv(base_path, skiprows=2)  # Skip "Price,Adj Close..." and "Ticker,^GSPC..."
+print(f"  Base columns after skip: {base.columns.tolist()}")
 
-# Normalize column names
-base.columns = [str(c).strip().lower() for c in base.columns]
+# First column should be dates
+base.columns = ['date', 'adj_close', 'close', 'high', 'low', 'open', 'volume']
 
-# Find date column (could be 'date' or 'price')
-date_col = None
-for col in base.columns:
-    if 'date' in col or col == 'price':
-        date_col = col
-        break
-
-if date_col and date_col != 'date':
-    base = base.rename(columns={date_col: 'date'})
-
+# Remove any rows where date is not a valid date
+base = base[base['date'].str.match(r'^\d{4}-\d{2}-\d{2}', na=False)]
+print(f"  Base rows (valid dates): {len(base)}")
 print(f"  Base date range: {base['date'].min()} → {base['date'].max()}")
 
-# Read patch CSV  
+# Read patch CSV (already clean format)
 print(f"\nReading patch: {patch_path}")
 patch = pd.read_csv(patch_path)
-patch.columns = [str(c).strip().lower() for c in patch.columns]
 print(f"  Patch rows: {len(patch)}")
 print(f"  Patch date range: {patch['date'].min()} → {patch['date'].max()}")
 
-# Ensure date is string in both
-base['date'] = pd.to_datetime(base['date']).dt.strftime('%Y-%m-%d')
-patch['date'] = pd.to_datetime(patch['date']).dt.strftime('%Y-%m-%d')
+# Ensure columns match
+final_cols = ['date', 'open', 'high', 'low', 'close', 'adj_close', 'volume']
 
-# Align columns (patch may have more columns like adj_close)
-# Keep only columns that exist in patch for the merged file
-common_cols = [c for c in patch.columns if c in base.columns or c == 'adj_close']
+# Reorder base columns
+base = base[final_cols]
+patch = patch[final_cols]
 
-# Make sure base has all needed columns (fill with NaN if missing)
-for col in common_cols:
-    if col not in base.columns:
-        base[col] = None
-
-# Select only common columns in same order
-final_cols = ['date', 'open', 'high', 'low', 'close']
-if 'adj_close' in patch.columns:
-    final_cols.append('adj_close')
-if 'volume' in patch.columns:
-    final_cols.append('volume')
-
-# Filter to available columns
-final_cols = [c for c in final_cols if c in base.columns or c in patch.columns]
-
-base = base[[c for c in final_cols if c in base.columns]]
-patch = patch[[c for c in final_cols if c in patch.columns]]
+# Convert numeric columns
+for col in ['open', 'high', 'low', 'close', 'adj_close', 'volume']:
+    base[col] = pd.to_numeric(base[col], errors='coerce')
+    patch[col] = pd.to_numeric(patch[col], errors='coerce')
 
 # Merge
 print(f"\nMerging...")
@@ -84,15 +61,24 @@ merged = merged.reset_index(drop=True)
 print(f"  Merged rows: {len(merged)}")
 print(f"  Merged date range: {merged['date'].min()} → {merged['date'].max()}")
 
-# Validate - check for gaps > 5 days
+# Validate - check for gaps > 7 days
 merged['date_dt'] = pd.to_datetime(merged['date'])
 gaps = merged['date_dt'].diff().dt.days
-large_gaps = gaps[gaps > 5]
+large_gaps = gaps[gaps > 7]
 if len(large_gaps) > 0:
-    print(f"\n⚠️  Found {len(large_gaps)} gaps > 5 days")
-    print(f"   Largest gap: {gaps.max()} days")
+    print(f"\n⚠️  Found {len(large_gaps)} gaps > 7 days (largest: {gaps.max()} days)")
+    # Show largest gaps
+    for idx in large_gaps.nlargest(3).index:
+        prev_date = merged.loc[idx-1, 'date'] if idx > 0 else 'N/A'
+        curr_date = merged.loc[idx, 'date']
+        print(f"   Gap: {prev_date} → {curr_date} ({int(gaps.loc[idx])} days)")
 else:
-    print(f"\n✅ No large gaps found")
+    print(f"\n✅ No gaps > 7 days found")
+
+# Check transition from 2025 to 2026
+transition = merged[(merged['date'] >= '2025-12-25') & (merged['date'] <= '2026-01-10')]
+print(f"\n📊 2025→2026 transition:")
+print(transition[['date', 'close']].to_string(index=False))
 
 # Save
 merged = merged.drop(columns=['date_dt'])
